@@ -4,7 +4,7 @@ import {
   ChevronLeft, ChevronRight, Clock, Users,
   BarChart2, Edit2, Check, X, FileText, Lock, Unlock,
   ChevronDown, ChevronUp, RefreshCw, ToggleLeft, ToggleRight, Plus,
-  AlignLeft, Activity, Eye, EyeOff, RotateCcw, AlertTriangle, History,
+  AlignLeft, Activity, Eye, EyeOff, RotateCcw,
   Download, UploadCloud
 } from 'lucide-react';
 
@@ -1152,46 +1152,47 @@ const App = () => {
 
         {activeTab === 'settings' && (
           <div className="p-2 flex-1 max-h-[calc(100vh-140px)] flex flex-col fade-in-soft space-y-1.5 overflow-hidden">
-            {/* 1행: 프로필 & API */}
+            {/* 1행: 프로필 & API보안 */}
             <div className="grid grid-cols-2 gap-1.5 shrink-0">
               <div className={`p-2 border ${borderCard} rounded-xl ${bgCard}`}>
                 <p className="text-[8px] font-black text-indigo-500 uppercase mb-1">Profile</p>
-                <div className="flex justify-between text-[9px] font-bold"><span>{userInfo.name}</span><span className="text-gray-400 text-[8px]">{userInfo.position}</span></div>
+                <div className="flex justify-between text-[10px] font-bold"><span>{userInfo.name}</span><span className="text-gray-400 text-[8px]">{userInfo.position}</span></div>
               </div>
               <div className={`p-2 border ${borderCard} rounded-xl ${bgCard}`}>
                 <p className="text-[8px] font-black text-amber-500 uppercase mb-1">API Security</p>
                 <div className="flex justify-between items-center h-3"><span className="text-[9px] font-mono text-gray-400">{apiKey ? 'CONNECTED' : 'EMPTY'}</span><Lock size={10} className="text-gray-400"/></div>
               </div>
             </div>
-            {/* 2행: 요일 & 테마 */}
+            {/* 2행: 시작요일 & 화면테마 */}
             <div className="grid grid-cols-2 gap-1.5 shrink-0">
               <div onClick={()=>setStartDay(startDay===1?0:1)} className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex justify-between items-center h-10`}>
-                <span className="text-[9px] font-bold">월요시작</span>{startDay===1?<ToggleRight size={16} className="text-indigo-500"/>:<ToggleLeft size={16}/>}
+                <span className="text-[9px] font-bold">월요일 시작</span>{startDay===1?<ToggleRight size={16} className="text-indigo-500"/>:<ToggleLeft size={16}/>}
               </div>
               <div onClick={()=>setTheme(isDark?'light':'dark')} className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex justify-between items-center h-10`}>
-                <span className="text-[9px] font-bold">다크모드</span>{isDark?<ToggleRight size={16} className="text-indigo-400"/>:<ToggleLeft size={16}/>}
+                <span className="text-[9px] font-bold">다크 모드</span>{isDark?<ToggleRight size={16} className="text-indigo-400"/>:<ToggleLeft size={16}/>}
               </div>
             </div>
-            {/* 3행: 시간 & 스캔 */}
+            {/* 3행: 조별시간 & 근무표스캔 */}
             <div className="grid grid-cols-2 gap-1.5 shrink-0">
               <div className={`p-2 border ${borderCard} rounded-xl ${bgCard}`}>
                 <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Shift Time</p>
                 <div className="flex justify-between text-[9px] font-bold"><span>A: {shiftSettings.A.start}</span><span>C: {shiftSettings.C.start}</span></div>
               </div>
               <div className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex flex-col justify-center h-10`}>
-                <button className="w-full py-1 bg-indigo-500 text-white rounded-md text-[9px] font-black">이미지 스캔</button>
+                <button className="w-full py-1 bg-indigo-500 text-white rounded-md text-[9px] font-black active:scale-95">이미지 스캔</button>
               </div>
             </div>
-            {/* 4행: 데이터 & 화이트리스트 (하단 모서리 보호구역) */}
+            {/* 4행: 데이터 백업 & 화이트리스트 */}
             <div className="grid grid-cols-2 gap-1.5 flex-1 min-h-0">
-              <div className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex flex-col justify-center`}>
-                <button onClick={exportData} className="text-[9px] font-bold text-gray-500 flex items-center gap-1 mb-1"><Download size={10}/> 내보내기</button>
+              <div className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex flex-col justify-center gap-1`}>
+                <p className="text-[8px] font-black text-emerald-500 uppercase">Data</p>
+                <button onClick={exportData} className="text-[9px] font-bold text-gray-500 flex items-center gap-1"><Download size={10}/> 내보내기</button>
                 <button className="text-[9px] font-bold text-indigo-500 flex items-center gap-1"><UploadCloud size={10}/> 불러오기</button>
               </div>
               <div className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex flex-col overflow-hidden`}>
                 <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Whitelist</p>
-                <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-wrap gap-1">
-                  {memberList.map(m=><span key={m} className="px-1 bg-gray-100 dark:bg-slate-700 rounded text-[8px] font-bold">{m}</span>)}
+                <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-wrap gap-1 content-start">
+                  {memberList.map(m=><span key={m} className="px-1.5 py-0.5 bg-gray-100 dark:bg-slate-700 rounded text-[8px] font-bold">{m}</span>)}
                 </div>
               </div>
             </div>
