@@ -1,0 +1,16 @@
+{
+  "short_name": "MONCLOS",
+  "name": "MONCLOS - 몽클로스 스케줄러",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2370/2370264.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#4f46e5",
+  "background_color": "#ffffff"
+}
