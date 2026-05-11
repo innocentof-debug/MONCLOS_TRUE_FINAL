@@ -140,6 +140,14 @@ const NumberInput = ({ value, onChange, onEnter, width = "w-20", align = "text-r
 };
 
 const InteractiveMiniChart = ({ rawData, metricKey, isDark, metricName, timeRange }) => {
+  // 데이터가 없으면 "데이터가 없다"고 알려주는 안전장치
+  if (!rawData || rawData.length === 0 || (rawData.length === 1 && rawData[0].workDays === 0)) {
+    return (
+      <div className="flex-1 flex items-center justify-center text-[10px] text-gray-400 italic">
+        표시할 추이 데이터가 없습니다.
+      </div>
+    );
+  }
   const [hoverIndex, setHoverIndex] = useState(null);
   const chartRef = useRef(null);
   const data = useMemo(() => {
@@ -937,8 +945,7 @@ const App = () => {
 
       <main className="flex-1 flex flex-col min-h-0 relative pb-[60px]">
         {activeTab === 'calendar' && (
-          /* p-2 -> p-1로 줄여서 전체 공간 확보, overflow-hidden으로 스크롤 방지 */
-          <div className="p-1 flex-1 min-h-0 flex flex-col fade-in-soft overflow-hidden" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEndAction}>
+          <div className="p-1.5 flex-1 max-h-[calc(100vh-140px)] flex flex-col fade-in-soft overflow-hidden" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEndAction}>
             
             {/* 1. 요일 헤더: py-1 -> py-0.5로 축소 */}
             <div className="grid grid-cols-7 mb-0.5 shrink-0">
@@ -1026,7 +1033,7 @@ const App = () => {
         )}
 
         {activeTab === 'salary' && (
-          <div className="p-1 flex-1 min-h-0 flex flex-col fade-in-soft space-y-1">
+          <div className="p-2 flex-1 max-h-[calc(100vh-140px)] flex flex-col fade-in-soft space-y-2 overflow-hidden">
             <div className="flex bg-gray-100 dark:bg-slate-700 rounded-lg p-1 shrink-0">
               <button type="button" onClick={() => setSalaryMenu('current')} className={`flex-1 text-[10px] py-1.5 rounded-md font-bold transition-colors ${salaryMenu === 'current' ? (isDark ? 'bg-slate-800 shadow text-indigo-400' : 'bg-white shadow text-indigo-500') : textMuted}`}>이번 달 급여</button>
               <button type="button" onClick={() => setSalaryMenu('past')} className={`flex-1 text-[10px] py-1.5 rounded-md font-bold transition-colors ${salaryMenu === 'past' ? (isDark ? 'bg-slate-800 shadow text-indigo-400' : 'bg-white shadow text-indigo-500') : textMuted}`}>과거 내역 조회</button>
@@ -1102,7 +1109,7 @@ const App = () => {
         {activeTab === 'statistics' && (() => {
           const pastStat = pastDataState[statPastIndex] || {};
           return (
-            <div className="p-1 flex-1 min-h-0 flex flex-col fade-in-soft space-y-0.5">
+            <div className="p-2 flex-1 max-h-[calc(100vh-140px)] flex flex-col fade-in-soft space-y-2 overflow-hidden">
               {/* 상단: 이번 달 현황 */}
               <div className={`${bgCard} p-2 rounded-xl shadow-sm border ${borderCard} shrink-0`}>
                 <h3 className="text-[10px] font-black mb-1.5 flex items-center text-gray-400 uppercase">
@@ -1144,98 +1151,48 @@ const App = () => {
         })()}
 
         {activeTab === 'settings' && (
-          <div className="p-1.5 flex-1 min-h-0 flex flex-col fade-in-soft space-y-1 overflow-hidden">
-            
-            {/* 1행: 프로필 & API 보안 (좌우 배치) */}
+          <div className="p-2 flex-1 max-h-[calc(100vh-140px)] flex flex-col fade-in-soft space-y-1.5 overflow-hidden">
+            {/* 1행: 프로필 & API */}
             <div className="grid grid-cols-2 gap-1.5 shrink-0">
-              <div className={`p-2 rounded-xl border ${bgCard} ${borderCard} ${editState.profile ? 'ring-1 ring-indigo-500' : ''}`}>
-                <div className="flex justify-between items-center mb-1">
-                  <h3 className="text-[9px] font-bold flex items-center gap-1"><Users size={12} className="text-indigo-500" /> 프로필</h3>
-                  <button onClick={() => setEditState(p => ({...p, profile: !p.profile}))} className="text-[8px] font-bold text-indigo-500">{editState.profile ? '완료' : '수정'}</button>
-                </div>
-                <div className="space-y-0.5">
-                  <div className="flex justify-between items-center text-[10px] font-bold">
-                    <span className="text-gray-400 text-[8px]">이름</span>
-                    {editState.profile ? <input value={userInfo.name} onChange={e=>setUserInfo({...userInfo, name: e.target.value})} className="w-12 bg-transparent border-b border-indigo-500 text-right outline-none text-[9px]"/> : <span>{userInfo.name}</span>}
-                  </div>
-                  <div className="flex justify-between items-center text-[10px] font-bold">
-                    <span className="text-gray-400 text-[8px]">직급</span>
-                    {editState.profile ? <input value={userInfo.position} onChange={e=>setUserInfo({...userInfo, position: e.target.value})} className="w-12 bg-transparent border-b border-indigo-500 text-right outline-none text-[9px]"/> : <span>{userInfo.position}</span>}
-                  </div>
-                </div>
+              <div className={`p-2 border ${borderCard} rounded-xl ${bgCard}`}>
+                <p className="text-[8px] font-black text-indigo-500 uppercase mb-1">Profile</p>
+                <div className="flex justify-between text-[9px] font-bold"><span>{userInfo.name}</span><span className="text-gray-400 text-[8px]">{userInfo.position}</span></div>
               </div>
-
-              <div className={`p-2 rounded-xl border ${bgCard} ${borderCard}`}>
-                <div className="flex justify-between items-center mb-1">
-                  <h3 className="text-[9px] font-bold flex items-center gap-1">
-                    {showApiKey ? <Unlock size={12} className="text-amber-500" /> : <Lock size={12} className="text-amber-500" />} API보안
-                  </h3>
-                  <button onClick={() => setIsApiKeyEditing(!isApiKeyEditing)} className="text-[8px] font-bold text-indigo-500">{isApiKeyEditing ? '저장' : '수정'}</button>
-                </div>
-                <div className="flex items-center justify-between h-5">
-                   {isApiKeyEditing ? 
-                    <input autoFocus value={tempApiKey} onChange={e=>setTempApiKey(e.target.value)} onBlur={()=>{setApiKey(tempApiKey); setIsApiKeyEditing(false);}} className="w-full text-[9px] bg-transparent border-b border-indigo-500 outline-none font-mono" /> :
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-[8px] text-gray-400 font-mono truncate flex-1">{apiKey ? (showApiKey ? 'CONNECTED' : '••••••••') : 'EMPTY'}</span>
-                      {apiKey && <button onClick={()=>setShowApiKey(!showApiKey)} className="ml-1 text-gray-400 active:scale-75"><Eye size={12}/></button>}
-                    </div>
-                   }
-                </div>
+              <div className={`p-2 border ${borderCard} rounded-xl ${bgCard}`}>
+                <p className="text-[8px] font-black text-amber-500 uppercase mb-1">API Security</p>
+                <div className="flex justify-between items-center h-3"><span className="text-[9px] font-mono text-gray-400">{apiKey ? 'CONNECTED' : 'EMPTY'}</span><Lock size={10} className="text-gray-400"/></div>
               </div>
             </div>
-
-            {/* 2행: 요일설정 & 테마 (좌우 배치) */}
+            {/* 2행: 요일 & 테마 */}
             <div className="grid grid-cols-2 gap-1.5 shrink-0">
-              <div onClick={() => setStartDay(startDay === 0 ? 1 : 0)} className={`p-2 rounded-xl border ${bgCard} ${borderCard} cursor-pointer active:scale-95 transition-transform flex justify-between items-center`}>
-                <div className="flex flex-col"><span className="text-[8px] text-gray-400 font-bold">시작 요일</span><span className="text-[9px] font-bold">{startDay === 1 ? '월요일' : '일요일'}</span></div>
-                {startDay === 1 ? <ToggleRight size={16} className="text-indigo-500"/> : <ToggleLeft size={16} className="text-gray-400"/>}
+              <div onClick={()=>setStartDay(startDay===1?0:1)} className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex justify-between items-center h-10`}>
+                <span className="text-[9px] font-bold">월요시작</span>{startDay===1?<ToggleRight size={16} className="text-indigo-500"/>:<ToggleLeft size={16}/>}
               </div>
-              <div onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className={`p-2 rounded-xl border ${bgCard} ${borderCard} cursor-pointer active:scale-95 transition-transform flex justify-between items-center`}>
-                <div className="flex flex-col"><span className="text-[8px] text-gray-400 font-bold">화면 테마</span><span className="text-[9px] font-bold">{isDark ? '다크' : '라이트'}</span></div>
-                {isDark ? <ToggleRight size={16} className="text-indigo-400"/> : <ToggleLeft size={16} className="text-gray-400"/>}
+              <div onClick={()=>setTheme(isDark?'light':'dark')} className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex justify-between items-center h-10`}>
+                <span className="text-[9px] font-bold">다크모드</span>{isDark?<ToggleRight size={16} className="text-indigo-400"/>:<ToggleLeft size={16}/>}
               </div>
             </div>
-
-            {/* 3행: 조별 시간 & OCR 스캔 (좌우 배치) */}
+            {/* 3행: 시간 & 스캔 */}
             <div className="grid grid-cols-2 gap-1.5 shrink-0">
-              <div className={`p-2 rounded-xl border ${bgCard} ${borderCard}`}>
-                <p className="text-[9px] font-bold text-gray-400 mb-1 flex items-center gap-1"><Clock size={10}/> 조별 시간</p>
-                <div className="space-y-0.5">
-                  {['A', 'C'].map(t => (
-                    <div key={t} className="flex justify-between items-center text-[8px] font-bold">
-                      <span className="text-gray-400">{t}조</span>
-                      <span className={isDark ? 'text-gray-300' : 'text-slate-600'}>{shiftSettings[t].start}</span>
-                    </div>
-                  ))}
+              <div className={`p-2 border ${borderCard} rounded-xl ${bgCard}`}>
+                <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Shift Time</p>
+                <div className="flex justify-between text-[9px] font-bold"><span>A: {shiftSettings.A.start}</span><span>C: {shiftSettings.C.start}</span></div>
+              </div>
+              <div className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex flex-col justify-center h-10`}>
+                <button className="w-full py-1 bg-indigo-500 text-white rounded-md text-[9px] font-black">이미지 스캔</button>
+              </div>
+            </div>
+            {/* 4행: 데이터 & 화이트리스트 (하단 모서리 보호구역) */}
+            <div className="grid grid-cols-2 gap-1.5 flex-1 min-h-0">
+              <div className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex flex-col justify-center`}>
+                <button onClick={exportData} className="text-[9px] font-bold text-gray-500 flex items-center gap-1 mb-1"><Download size={10}/> 내보내기</button>
+                <button className="text-[9px] font-bold text-indigo-500 flex items-center gap-1"><UploadCloud size={10}/> 불러오기</button>
+              </div>
+              <div className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex flex-col overflow-hidden`}>
+                <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Whitelist</p>
+                <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-wrap gap-1">
+                  {memberList.map(m=><span key={m} className="px-1 bg-gray-100 dark:bg-slate-700 rounded text-[8px] font-bold">{m}</span>)}
                 </div>
-              </div>
-
-              <div className={`p-2 rounded-xl border ${bgCard} ${borderCard} flex flex-col justify-center items-center gap-1`}>
-                <p className="text-[8px] font-bold text-gray-400 uppercase">AI OCR Scan</p>
-                <button onClick={checkAndTriggerUpload} className="w-full py-1 bg-indigo-500 text-white rounded-md text-[9px] font-black active:scale-95 flex items-center justify-center gap-1">
-                  <Upload size={10}/> 이미지 선택
-                </button>
-              </div>
-            </div>
-
-            {/* 4행: 데이터 백업 & 복구 (좌우 배치) */}
-            <div className="grid grid-cols-2 gap-1.5 shrink-0">
-              <button onClick={exportData} className={`py-1.5 rounded-xl border text-[9px] font-bold flex items-center justify-center gap-1 ${bgCard} ${borderCard} active:scale-95`}><Download size={10}/> 백업</button>
-              <button onClick={()=>importFileRef.current.click()} className="py-1.5 rounded-xl border bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 text-[9px] font-bold flex items-center justify-center gap-1 active:scale-95"><UploadCloud size={10}/> 복구</button>
-            </div>
-
-            {/* 마지막: 화이트리스트 (남은 공간을 모두 사용) */}
-            <div className={`p-2 rounded-xl border flex-1 min-h-0 flex flex-col overflow-hidden ${bgCard} ${borderCard}`}>
-              <div className="flex justify-between items-center mb-1 shrink-0">
-                <h3 className="text-[9px] font-bold flex items-center gap-1"><Users size={12} className="text-indigo-500" /> 화이트리스트</h3>
-                <button onClick={() => setEditState(p => ({...p, members: !p.members}))} className="text-[8px] font-bold text-indigo-500">{editState.members ? '완료' : '수정'}</button>
-              </div>
-              <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-wrap gap-1 content-start">
-                {memberList.map((m, idx) => (
-                  <span key={idx} className="px-1.5 py-0.5 bg-gray-100 dark:bg-slate-700 rounded text-[9px] font-bold flex items-center gap-1 shrink-0">
-                    {m} {editState.members && <X size={8} onClick={()=>setMemberList(prev=>prev.filter((_,i)=>i!==idx))} className="text-rose-500"/>}
-                  </span>
-                ))}
               </div>
             </div>
           </div>
