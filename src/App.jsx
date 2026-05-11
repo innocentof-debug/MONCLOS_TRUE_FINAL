@@ -52,15 +52,27 @@ const INITIAL_SHIFT_SETTINGS = {
 
 const getInitialShiftProps = (shiftStr) => {
   const s = String(shiftStr).trim().toUpperCase();
-  // 마침표(.), 가운뎃점(·), 불렛점(•) 등을 모두 무급으로 인식
-  if (s === '/' || s === '.' || s === '·' || s === '•') {
-    return { isPaid: false, workDayValue: 0, isLeave: false };
+  
+  // 1. 무급 휴무 (슬래시, 하이픈, 빈칸 등)
+  if (s === '/' || s === '-' || s === '') {
+  return { isPaid: false, workDayValue: 0, isLeave: false };
+}
+  
+  // 2. 반반차 (0.25일) - '반차'가 포함되나 순수 '반차'는 아닌 경우 (예: A반차, 오후반차)
+  if (s.includes('반차') && s !== '반차') {
+    return { isPaid: true, workDayValue: 0.25, isLeave: false };
   }
-  // 반반차(0.25일) 및 반차 인식 로직
-  if (s.includes('오전반차') || s.includes('오후반차')) return { isPaid: true, workDayValue: 0.25, isLeave: false };
-  if (s === 'HL' || s === '반차' || s === '1/2') return { isPaid: true, workDayValue: 0.5, isLeave: false };
-  if (s === 'AL' || s === '연차' || s === 'OFF') return { isPaid: true, workDayValue: 1, isLeave: true };
+  
+  // 3. 기존 반차 (0.5일)
+  if (s === 'HL' || s === '반차' || s === '1/2') {
+    return { isPaid: true, workDayValue: 0.5, isLeave: false };
+  }
+  
+  // 4. 유급 휴가 및 일반 근무 처리
   if (['A', 'B', 'C'].includes(s)) return { isPaid: true, workDayValue: 1, isLeave: false };
+  if (s === 'AL' || s === '연차' || s === 'OFF') return { isPaid: true, workDayValue: 1, isLeave: true };
+  
+  // 그 외 텍스트는 유급 휴가로 기본 처리 (난임휴가 등)
   return { isPaid: true, workDayValue: 1, isLeave: true }; 
 };
 
@@ -404,16 +416,26 @@ const App = () => {
     const MODEL_NAME = "gemini-2.5-flash";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
     
-    const prompt = `당신은 몽클로스 매장 전용 근무표 분석가입니다. 이미지에서 표 구조를 완벽히 파악하여 팀 전체 일정을 추출하세요.
-[필독: 몽클로스 근무 규칙]
-1. 분석 1순위: 표의 각 칸에 적힌 기호와 텍스트를 직접 카운팅하세요. 우측 요약표는 무시하십시오.
-2. 반차 규칙: '오후반차', '오전반차' 등 수식어가 붙은 반차는 반드시 그대로 추출하세요. (코드에서 0.25일로 처리함)
-3. 휴무 구분: '/' 또는 '.' (무급), 'OFF' (유급).
-4. 팀 통합 스케줄링: 타겟 인물(${userInfo.name}) 및 화이트리스트(${memberList.join(', ')}) 인원들의 조 정보를 추출하세요.
+    const prompt = `당신은 '몽클로스' 매장의 근무표 분석 전문가입니다. 
+제공된 이미지는 가로로 긴 단일 테이블 형태의 디지털 데이터입니다.
+
+[절대 원칙]
+1. 날짜 설정: 이미지의 제목은 무시하고, 반드시 요청된 날짜인 [${targetYear}년 ${targetMonth}월]을 기준으로 데이터를 구성하세요.
+2. 분석 범위: 'NAME'과 'POSITION' 열, 그리고 날짜 숫자(1, 2, 3...)가 교차하는 표 내부의 데이터만 추출합니다. 우측 및 하단의 통계는 철저히 무시하세요.
+
+[행(Row) 및 데이터 처리]
+1. 인물 식별: 'NAME'과 'POSITION' 헤더를 찾아 짝지어 식별하세요. 이름이 'NEW'로 중복되거나 직책명(부매니저)이 쓰여 있어도, 행이 다르면 무조건 별개의 인물로 처리합니다.
+2. 데이터 추출: 빈 칸은 무급 휴무('OFF')로 인식합니다. '/', '-' 기호도 'OFF'로 추출하세요. 'A', 'B', 'C'는 조 이름으로, 기타 텍스트('반차' 포함 단어, '연차' 등)는 보이는 그대로 추출합니다.
+
+[출력 구성]
+- 타겟 인물: '${userInfo.name}' (화이트리스트 '${memberList.join(', ')}'를 참고하되, 이미지에 있는 이름이 우선입니다.)
+- 'peers': 해당 날짜에 출근한(휴무가 아닌) 모든 동료를 '이름/직급(조)' 형태로 포함하세요. (예: "안은정/ASM(C)", "NEW/OS(A)")
 
 [출력 JSON 형식]
 {
-  "schedules": { "YYYY-MM-DD": { "shift": "A/B/C/OFF/AL/HL/오후반차 등", "peers": ["동료이름(조)"] } }
+  "schedules": {
+    "YYYY-MM-DD": { "shift": "기호", "peers": ["이름/직급(조)"] }
+  }
 }`;
 
     const payload = {
@@ -463,15 +485,27 @@ const App = () => {
       setOcrProgress(90);
       if (result && result.schedules) {
         setScheduleData(prev => {
-          const targetPrefix = `${ocrTargetYear}-${ocrTargetMonth}`;
-          const newData = Object.keys(prev)
-            .filter(key => !key.startsWith(targetPrefix))
-            .reduce((obj, key) => { obj[key] = prev[key]; return obj; }, {});
+          const newData = { ...prev }; // 기존 데이터 유지 (월 초기화 안 함)
+          
+          // 오늘 날짜 추출 (시점 필터링 기준)
+          const today = new Date();
+          const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
           Object.entries(result.schedules).forEach(([dateStr, data]) => {
             const shift = data.shift || 'OFF';
+            const isPast = dateStr < todayStr;
+            const isManual = prev[dateStr]?.isManual === true;
+
+            // 과거(어제까지)이거나 루몽씨가 직접 수정한 데이터면 절대 건드리지 않음
+            if (isPast || isManual) return;
+
+            // 오늘 이후 & 수정 안 된 데이터만 OCR 값으로 업데이트 (기존 메모는 유지)
             newData[dateStr] = {
-              shift: shift, peers: data.peers || [], memo: '', isMemoVisible: false, ...getInitialShiftProps(shift) 
+              ...(prev[dateStr] || {}), // 기존 메모 등 속성 유지
+              shift: shift,
+              peers: data.peers || [],
+              isManual: false, // OCR이 쓴 기록이므로 false
+              ...getInitialShiftProps(shift) 
             };
           });
           return newData;
@@ -521,11 +555,11 @@ const App = () => {
       const dateStr = formatDate(dateToProcess); 
       if (editState.shift) { 
         const newProps = getInitialShiftProps(tempShift); 
-        setScheduleData(prev => ({ ...prev, [dateStr]: { ...(prev[dateStr] || {}), shift: tempShift, ...newProps } })); 
+        setScheduleData(prev => ({ ...prev, [dateStr]: { ...(prev[dateStr] || {}), shift: tempShift, ...newProps, isManual: true } })); 
       } 
       if (editState.dailyInc) setDailyIncentives(prev => ({...prev, [dateStr]: tempDailyInc})); 
-      if (editState.memo) setScheduleData(prev => ({...prev, [dateStr]: { ...(prev[dateStr] || {}), memo: tempMemo.trim(), isMemoVisible: tempMemo.trim() !== ''}})); 
-      if (editState.addingPeer && newPeerName.trim()) setScheduleData(prev => ({...prev, [dateStr]: {...(prev[dateStr] || {}), peers: [...(prev[dateStr]?.peers || []), newPeerName.trim()]}})); 
+      if (editState.memo) setScheduleData(prev => ({...prev, [dateStr]: { ...(prev[dateStr] || {}), memo: tempMemo.trim(), isMemoVisible: tempMemo.trim() !== '', isManual: true}})); 
+      if (editState.addingPeer && newPeerName.trim()) setScheduleData(prev => ({...prev, [dateStr]: {...(prev[dateStr] || {}), peers: [...(prev[dateStr]?.peers || []), newPeerName.trim()], isManual: true}})); 
     } 
     setClosingDate(modalOpenDate);
     setEditState(prev => ({ ...prev, dailyInc: false, shift: false, peersList: false, addingPeer: false, memo: false }));
@@ -1387,10 +1421,10 @@ const App = () => {
                     )}
                   </div>
                   <div className="mt-2.5 flex gap-1.5">
-                    <button type="button" onClick={(e) => { e.stopPropagation(); setScheduleData(p => ({...p, [dateStr]: {...p[dateStr], isPaid: !currentData.isPaid}})); }} className={`px-1.5 py-1 text-[8px] sm:text-[9px] font-bold rounded flex items-center gap-1 ${currentData.isPaid ? (isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-100 text-indigo-600') : (isDark ? 'bg-slate-700 text-gray-400' : 'bg-gray-100 text-gray-500')}`}>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); setScheduleData(p => ({...p, [dateStr]: {...p[dateStr], isPaid: !currentData.isPaid, isManual: true}})); }} className={`px-1.5 py-1 text-[8px] sm:text-[9px] font-bold rounded flex items-center gap-1 ${currentData.isPaid ? (isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-100 text-indigo-600') : (isDark ? 'bg-slate-700 text-gray-400' : 'bg-gray-100 text-gray-500')}`}>
                       {currentData.isPaid ? '유급 인정' : '무급 휴무'} {currentData.isPaid ? <ToggleRight size={10}/> : <ToggleLeft size={10}/>}
                     </button>
-                    <select value={currentData.workDayValue} onChange={(e) => setScheduleData(p => ({...p, [dateStr]: {...p[dateStr], workDayValue: Number(e.target.value)}}))} className={`px-1.5 py-1 text-[8px] sm:text-[9px] font-bold rounded outline-none cursor-pointer appearance-none border ${isDark ? 'bg-slate-700 text-white border-slate-600' : 'bg-gray-100 text-slate-800 border-gray-200'} focus:ring-1 focus:ring-indigo-500`}>
+                    <select value={currentData.workDayValue} onChange={(e) => setScheduleData(p => ({...p, [dateStr]: {...p[dateStr], workDayValue: Number(e.target.value), isManual: true}}))} className={`px-1.5 py-1 text-[8px] sm:text-[9px] font-bold rounded outline-none cursor-pointer appearance-none border ${isDark ? 'bg-slate-700 text-white border-slate-600' : 'bg-gray-100 text-slate-800 border-gray-200'} focus:ring-1 focus:ring-indigo-500`}>
                       <option value={1}>1일 인정 (온종일)</option>
                       <option value={0.5}>0.5일 인정 (반차)</option>
                       <option value={0.25}>0.25일 인정 (반반차)</option>
@@ -1435,7 +1469,7 @@ const App = () => {
                         <span key={idx} className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] sm:text-[11px] font-bold ${isDark ? 'bg-slate-700 text-gray-200' : 'bg-gray-100 text-slate-700'}`}>
                           {peer}
                           {editState.peersList && (
-                            <button type="button" onClick={(e) => { e.stopPropagation(); setScheduleData(prev => ({ ...prev, [dateStr]: { ...(prev[dateStr] || {}), peers: (prev[dateStr]?.peers || []).filter((_, i) => i !== idx) } })); }} className="ml-1 p-0.5 rounded-full hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setScheduleData(prev => ({ ...prev, [dateStr]: { ...(prev[dateStr] || {}), peers: (prev[dateStr]?.peers || []).filter((_, i) => i !== idx), isManual: true } })); }} className="ml-1 p-0.5 rounded-full hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors">
                               <X size={10} className="text-gray-400 hover:text-rose-500"/>
                             </button>
                           )}
