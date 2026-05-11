@@ -150,7 +150,7 @@ const InteractiveMiniChart = ({ rawData, metricKey, isDark, metricName, timeRang
   }, [rawData, timeRange]);
   const gradientId = useMemo(() => `areaGradient-${Math.random().toString(36).slice(2)}`, []);
   const padding = { top: 20, right: 15, bottom: 20, left: 15 };
-  const width = 400; const height = 130; 
+  const width = 400; const height = 110; 
   const innerWidth = width - padding.left - padding.right;
   const innerHeight = height - padding.top - padding.bottom;
   const values = data.map(d => d[metricKey] || 0);
@@ -224,7 +224,7 @@ const StatGrid = ({ stats, isDark }) => {
     return '';
   };
   const Cell = ({ label, value, colorClass }) => (
-    <div className={`p-1.5 sm:p-2 rounded-xl text-center border-2 transition-all duration-300 ${isDark ? 'bg-slate-700/60 border-slate-700/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]'}`}>
+    <div className={`p-1 rounded-xl text-center border-2 transition-all duration-300 ${isDark ? 'bg-slate-700/60 border-slate-700/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]'}`}>
       <p className={`text-[9px] font-black mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'} uppercase tracking-tight`}>{label}</p>
       <p className={`text-[12px] sm:text-[13px] font-black ${colorClass || (isDark ? 'text-white' : 'text-slate-900')}`}>{value}</p>
     </div>
@@ -733,7 +733,7 @@ const App = () => {
     const rateToDisplay = !isPastMode ? currentHourlyRate : (pastDataState[salaryPastIndex]?.hourlyRate || globalHourlyRate);
     return (
       <div className={`
-        ${bgCard} p-2 rounded-xl shadow-sm border 
+        ${bgCard} p-1.5 rounded-xl shadow-sm border 
         ${borderCard} flex-1 min-h-0 flex flex-col overflow-hidden
       `}>
         <div className="flex justify-between items-start mb-1.5 shrink-0">
@@ -741,7 +741,7 @@ const App = () => {
             <p className="text-[9px] text-gray-400 font-bold mb-0.5 uppercase">
               {isPastMode ? `${pastMonthStr} 실 수령액` : '실 수령액 (E = A - D)'}
             </p>
-            <h2 className={`text-xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <h2 className={`text-lg font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>
               ₩{calcData.E.toLocaleString()}
             </h2>
           </div>
@@ -784,13 +784,13 @@ const App = () => {
             )}
           </div>
         </div>
-        <div className={`space-y-1.5 pt-1.5 border-t border-dashed ${isDark ? 'border-slate-600' : 'border-gray-100'} flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1`}>
+        <div className={`space-y-1 pt-1 border-t border-dashed ${isDark ? 'border-slate-600' : 'border-gray-100'} flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1`}>
           <p className={`text-[10px] font-bold ${isDark ? 'text-indigo-300' : 'text-indigo-500'} mb-0.5`}>A. 세전 지급액 : ₩{calcData.A.toLocaleString()}</p>
           <div className="flex justify-between text-[11px]">
             <span className={textMuted}>기본급 ({calcData.workDays}일 × 8h)</span>
             <span className={`font-bold ${isDark ? 'text-gray-200' : 'text-slate-800'}`}>₩{calcData.basePay.toLocaleString()}</span>
           </div>
-          <div className="flex justify-between text-[11px] items-center min-h-[28px]">
+          <div className="flex justify-between text-[11px] items-center min-h-[24px]">
             <span className={textMuted}>주휴수당 ({calcData.paidHolidayWeeks}주 × 8h)</span>
             {!isPastMode ? (
               editState.absence ? (
@@ -810,7 +810,7 @@ const App = () => {
               )
             ) : <span className={`font-bold ${isDark ? 'text-gray-200' : 'text-slate-800'}`}>₩{calcData.weeklyHolidayPay.toLocaleString()}</span>}
           </div>
-          <div className="flex justify-between text-[11px] items-center min-h-[28px]">
+          <div className="flex justify-between text-[11px] items-center min-h-[24px]">
             <span className={textMuted}>추가근무</span>
             {!isPastMode ? (
               editState.extraPay ? (
@@ -829,7 +829,7 @@ const App = () => {
           </div>
           <div className="flex justify-between text-[11px]"><span className={textMuted}>식대</span><span className={`font-bold ${isDark ? 'text-gray-200' : 'text-slate-800'}`}>₩{calcData.mealAllowance.toLocaleString()}</span></div>
           <div className="flex justify-between text-[11px]"><span className={textMuted}>연차수당 ({calcData.leaveDays}일)</span><span className={`font-bold ${isDark ? 'text-gray-200' : 'text-slate-800'}`}>₩{calcData.leavePay.toLocaleString()}</span></div>
-          <div className="flex justify-between text-[11px] items-center min-h-[28px]">
+          <div className="flex justify-between text-[11px] items-center min-h-[24px]">
             <span className={textMuted}>인센티브 합산</span>
             <span className={`font-bold ${calcData.validIncentive > 0 ? (isDark ? 'text-indigo-300' : 'text-indigo-500') : textMuted}`}>{calcData.totalWorkDays >= 15 ? `₩${calcData.validIncentive.toLocaleString()}` : '미지급'}</span>
           </div>
@@ -838,7 +838,7 @@ const App = () => {
             <div className={`flex justify-between text-[10px] font-bold ${isDark ? 'text-gray-300' : 'text-gray-600'}`}><span>C. 과세 소득</span><span>= ₩{calcData.C.toLocaleString()}</span></div>
             {calcData.mode === '회사기준' && (
               <div className="flex flex-col mt-2 gap-1">
-                <div className={`flex justify-between text-[10px] font-bold items-center min-h-[28px] ${isDark ? 'text-indigo-300' : 'text-indigo-500'}`}>
+                <div className={`flex justify-between text-[10px] font-bold items-center min-h-[24px] ${isDark ? 'text-indigo-300' : 'text-indigo-500'}`}>
                   <span>* Mode A 보수월액</span>
                   {(!isPastMode ? editState.baseSalary : editState.pastBaseSalary) ? (
                     <div className="flex items-center gap-1.5 h-[28px]">
@@ -902,7 +902,7 @@ const App = () => {
 
   return (
     <div className={`flex flex-col h-screen overflow-hidden ${bgMain} ${textMain} font-sans max-w-md mx-auto shadow-2xl border-x ${borderCard} transition-colors duration-300`}>
-      <header className={`${bgCard} px-4 pt-4 pb-2 flex justify-between items-center border-b ${borderCard} z-10 shrink-0`}>
+      <header className={`${bgCard} px-4 pt-1 pb-1 flex justify-between items-center border-b ${borderCard} z-10 shrink-0`}>
   {/* pt-8 -> pt-4로 줄여 윗 공간 확보, items-end -> items-center로 정렬 변경 */}
   <div>
     <h1 className="text-base font-black tracking-tighter leading-none">MONCLOS</h1>
@@ -954,7 +954,7 @@ const App = () => {
             <div className={`flex-1 min-h-0 relative overflow-hidden rounded-xl border ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
               <div key={currentDate.toISOString()} 
                    className={`absolute inset-0 grid grid-cols-7 gap-px ${isDark ? 'bg-slate-700' : 'bg-gray-200'} ${slideDirection === 'left' ? 'slide-in-left' : slideDirection === 'right' ? 'slide-in-right' : ''}`} 
-                   style={{ gridTemplateRows: `repeat(${calendarDays.length / 7}, minmax(0, 1fr))` }}>
+                   style={{ gridTemplateRows: 'repeat(auto-fit, minmax(0, 1fr))', height: '100%' }}>
                 
                 {calendarDays.map((dayObj, idx) => {
                   const { date, isCurrentMonth } = dayObj; 
@@ -988,12 +988,12 @@ const App = () => {
                       `}
                     >
                       {/* 3. 날짜 숫자 영역: h-[18px] -> h-[15px]로 축소, 오늘 표시 원 크기도 축소 */}
-                      <div className="relative flex justify-center items-center w-full h-[15px] mt-0.5">
+                      <div className="relative flex justify-center items-center w-full h-[10px] mt-0.5">
                         <div className="relative flex justify-center items-center h-full">
                           {shiftData?.memo && <div className="absolute right-full mr-0.5 w-1 h-1 rounded-full bg-indigo-500" />}
                           <span className={`
-                            text-[9px] font-black flex items-center justify-center 
-                            ${isToday ? `w-[15px] h-[15px] rounded-md ${boxStyle}` : textColor}
+                            text-[8px] font-black flex items-center justify-center 
+                            ${isToday ? `w-[15px] h-[10px] rounded-md ${boxStyle}` : textColor}
                           `}>
                             {date.getDate()}
                           </span>
@@ -1026,7 +1026,7 @@ const App = () => {
         )}
 
         {activeTab === 'salary' && (
-          <div className="p-1.5 flex-1 min-h-0 flex flex-col fade-in-soft space-y-1.5">
+          <div className="p-1 flex-1 min-h-0 flex flex-col fade-in-soft space-y-1">
             <div className="flex bg-gray-100 dark:bg-slate-700 rounded-lg p-1 shrink-0">
               <button type="button" onClick={() => setSalaryMenu('current')} className={`flex-1 text-[10px] py-1.5 rounded-md font-bold transition-colors ${salaryMenu === 'current' ? (isDark ? 'bg-slate-800 shadow text-indigo-400' : 'bg-white shadow text-indigo-500') : textMuted}`}>이번 달 급여</button>
               <button type="button" onClick={() => setSalaryMenu('past')} className={`flex-1 text-[10px] py-1.5 rounded-md font-bold transition-colors ${salaryMenu === 'past' ? (isDark ? 'bg-slate-800 shadow text-indigo-400' : 'bg-white shadow text-indigo-500') : textMuted}`}>과거 내역 조회</button>
@@ -1102,7 +1102,7 @@ const App = () => {
         {activeTab === 'statistics' && (() => {
           const pastStat = pastDataState[statPastIndex] || {};
           return (
-            <div className="p-1.5 flex-1 min-h-0 flex flex-col fade-in-soft space-y-1">
+            <div className="p-1 flex-1 min-h-0 flex flex-col fade-in-soft space-y-0.5">
               {/* 상단: 이번 달 현황 */}
               <div className={`${bgCard} p-2 rounded-xl shadow-sm border ${borderCard} shrink-0`}>
                 <h3 className="text-[10px] font-black mb-1.5 flex items-center text-gray-400 uppercase">
@@ -1427,7 +1427,7 @@ const App = () => {
         );
       })()}
 
-      <nav className={`fixed bottom-0 w-full max-w-md border-t px-6 h-[85px] pb-6 flex justify-between items-center z-40 backdrop-blur-xl shrink-0 ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-gray-100'}`}>
+      <nav className={`fixed bottom-0 w-full max-w-md border-t px-6 h-[60px] pb-6 flex justify-between items-center z-40 backdrop-blur-xl shrink-0 ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-gray-100'}`}>
         {['calendar', 'salary', 'statistics', 'settings'].map(tab => (
           <button 
             type="button" 
@@ -1438,10 +1438,10 @@ const App = () => {
               ${activeTab === tab ? (isDark ? 'text-indigo-400' : 'text-indigo-500') : textMuted}
             `}
           >
-            {tab === 'calendar' && <CalendarIcon size={22} strokeWidth={activeTab === tab ? 2.5 : 2} />}
-            {tab === 'salary' && <Wallet size={22} strokeWidth={activeTab === tab ? 2.5 : 2} />}
-            {tab === 'statistics' && <BarChart2 size={22} strokeWidth={activeTab === tab ? 2.5 : 2} />}
-            {tab === 'settings' && <Settings size={22} strokeWidth={activeTab === tab ? 2.5 : 2} />}
+            {tab === 'calendar' && <CalendarIcon size={18} strokeWidth={activeTab === tab ? 2.5 : 2} />}
+            {tab === 'salary' && <Wallet size={18} strokeWidth={activeTab === tab ? 2.5 : 2} />}
+            {tab === 'statistics' && <BarChart2 size={18} strokeWidth={activeTab === tab ? 2.5 : 2} />}
+            {tab === 'settings' && <Settings size={18} strokeWidth={activeTab === tab ? 2.5 : 2} />}
             
             <span className="text-[10px] font-black">
               {tab === 'calendar' ? '달력' : tab === 'salary' ? '급여' : tab === 'statistics' ? '통계' : '설정'}
