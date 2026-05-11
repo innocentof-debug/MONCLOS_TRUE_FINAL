@@ -1198,193 +1198,16 @@ const App = () => {
             </div>
           </div>
         )}
+      </main>
 
-      {(modalOpenDate || closingDate) && (() => {
-        const dateToRender = closingDate || modalOpenDate; 
-        const dateStr = formatDate(dateToRender); 
-        const rawShiftData = getShift(dateToRender) || {}; 
-        const currentData = { shift: 'OFF', peers: [], memo: '', isMemoVisible: false, isPaid: false, workDayValue: 0, isLeave: false, ...rawShiftData }; 
-        const currentShift = currentData.shift; 
-        const displayShiftName = INITIAL_SHIFT_SETTINGS[currentShift]?.label || currentShift; 
-        const holidayName = HOLIDAY_DATA[dateStr];
-        
-        return (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm p-4" onClick={handleCloseModal}>
-            <div className={`${bgCard} w-full max-w-md rounded-t-[30px] p-5 sm:p-6 pb-8 sm:pb-10 shadow-2xl relative border-t ${borderCard} flex flex-col max-h-[90vh] ${closingDate ? 'slide-out-down' : 'slide-in-up'}`} onClick={(e) => e.stopPropagation()}>
-              <div className={`w-10 h-1.5 shrink-0 rounded-full mx-auto mb-5 sm:mb-6 ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}></div>
-              
-              <div className="flex justify-between items-start mb-5 sm:mb-6 shrink-0">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="text-[10px] sm:text-xs font-bold text-gray-400">{dateToRender.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })}</h4>
-                    {holidayName && <span className="text-[9px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-1.5 py-0.5 rounded leading-none">{holidayName}</span>}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {editState.shift ? (
-                      <div className="flex gap-2 items-center flex-1 h-[32px]">
-                        <input type="text" value={tempShift} onChange={(e)=>setTempShift(e.target.value)} className={`h-full w-20 text-xl font-black outline-none border-b-2 ${isDark ? 'border-indigo-500 bg-transparent text-white' : 'border-indigo-500 bg-transparent text-black'}`} autoFocus />
-                        <button type="button" onClick={(e) => { e.stopPropagation(); const newProps = getInitialShiftProps(tempShift); setScheduleData(prev => ({ ...prev, [dateStr]: { ...(prev[dateStr] || {}), shift: tempShift, ...newProps } })); setEditState(p => ({...p, shift: false})); }} className="h-full px-2.5 bg-indigo-500 text-white rounded-lg flex items-center justify-center shadow-sm active:scale-95 transition-transform"><Check size={16}/></button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); setEditState(p => ({...p, shift: false})); }} className={`h-full px-2.5 rounded-lg flex items-center justify-center shadow-sm active:scale-95 transition-transform ${isDark?'bg-slate-600 text-gray-300':'bg-gray-200 text-gray-600'}`}><X size={16}/></button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2.5">
-                        <h3 className={`text-xl sm:text-2xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{displayShiftName}</h3>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); setTempShift(currentShift); setEditState(p => ({...p, shift: true})); }} className={`p-2 rounded-full transition-colors ${isDark ? 'bg-slate-700 text-gray-300 hover:bg-slate-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}><Edit2 size={16}/></button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-2.5 flex gap-1.5">
-                    <button type="button" onClick={(e) => { e.stopPropagation(); setScheduleData(p => ({...p, [dateStr]: {...p[dateStr], isPaid: !currentData.isPaid, isManual: true}})); }} className={`px-1.5 py-1 text-[8px] sm:text-[9px] font-bold rounded flex items-center gap-1 ${currentData.isPaid ? (isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-100 text-indigo-600') : (isDark ? 'bg-slate-700 text-gray-400' : 'bg-gray-100 text-gray-500')}`}>
-                      {currentData.isPaid ? '유급 인정' : '무급 휴무'} {currentData.isPaid ? <ToggleRight size={10}/> : <ToggleLeft size={10}/>}
-                    </button>
-                    <select value={currentData.workDayValue} onChange={(e) => setScheduleData(p => ({...p, [dateStr]: {...p[dateStr], workDayValue: Number(e.target.value), isManual: true}}))} className={`px-1.5 py-1 text-[8px] sm:text-[9px] font-bold rounded outline-none cursor-pointer appearance-none border ${isDark ? 'bg-slate-700 text-white border-slate-600' : 'bg-gray-100 text-slate-800 border-gray-200'} focus:ring-1 focus:ring-indigo-500`}>
-                      <option value={1}>1일 인정 (온종일)</option>
-                      <option value={0.5}>0.5일 인정 (반차)</option>
-                      <option value={0.25}>0.25일 인정 (반반차)</option>
-                      <option value={0}>0일 인정</option>
-                    </select>
-                  </div>
-                </div>
-                <button type="button" onClick={handleCloseModal} className={`p-1.5 rounded-full ${isDark ? 'bg-slate-700 text-gray-300' : 'bg-gray-100 text-gray-400'}`}><ChevronLeft className="rotate-90" size={16} /></button>
-              </div>
-
-              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-3 sm:space-y-4 pr-1 pb-4">
-                <div className={`flex items-center gap-2 sm:gap-3 p-2 rounded-xl transition-all ${editState.dailyInc ? (isDark ? 'ring-2 ring-inset ring-indigo-500 bg-indigo-900/10' : 'ring-2 ring-inset ring-indigo-500 bg-indigo-50/20') : ''}`}>
-                  <div className={`p-2 rounded-xl shrink-0 ${isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-50 text-amber-500'}`}><Wallet size={16} /></div>
-                  <div className="flex-1 flex justify-between items-center">
-                    <div><p className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase">일일 인센티브</p></div>
-                    {editState.dailyInc ? (
-                      <div className="flex items-center gap-1.5 h-[28px]">
-                        <NumberInput value={tempDailyInc} onChange={setTempDailyInc} onEnter={(e) => handleSaveDailyInc(e, dateStr)} width="w-20" />
-                        <button type="button" onClick={(e) => handleSaveDailyInc(e, dateStr)} className="h-full px-2 flex items-center justify-center bg-amber-500 text-white rounded-md shadow-sm active:scale-95 transition-transform"><Check size={14} /></button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); setEditState(p => ({...p, dailyInc: false})); }} className={`h-full px-2 flex items-center justify-center rounded-md shadow-sm active:scale-95 transition-transform ${isDark ? 'bg-slate-600 text-gray-300' : 'bg-gray-200 text-gray-600'}`}><X size={14}/></button>
-                      </div>
-                    ) : (
-                      <div className={`flex items-center gap-1.5 px-1.5 py-0.5 -mx-1.5 rounded-md cursor-pointer transition-all duration-500 ${flashingField === 'dailyInc' ? 'bg-indigo-500/20 ring-1 ring-indigo-500/50' : ''}`} onClick={(e) => { e.stopPropagation(); setTempDailyInc(dailyIncentives[dateStr] || ''); setEditState(p => ({...p, dailyInc: true})); }}>
-                        <span className="font-bold text-amber-500 text-[11px] sm:text-sm">{dailyIncentives[dateStr] ? `+ ₩${dailyIncentives[dateStr]}` : '₩ 0'}</span>
-                        <div className={`p-1.5 rounded-full transition-colors ${isDark ? 'bg-slate-700 hover:bg-slate-600' : 'bg-gray-100 hover:bg-gray-200'}`}><Edit2 size={12} /></div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className={`flex items-start gap-2 sm:gap-3 p-2 rounded-xl transition-all ${editState.peersList ? (isDark ? 'ring-2 ring-inset ring-indigo-500 bg-indigo-900/10' : 'ring-2 ring-inset ring-indigo-500 bg-indigo-50/20') : ''}`}>
-                  <div className={`p-2 rounded-xl shrink-0 ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-500'}`}><Users size={16} /></div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-center mb-1.5">
-                      <p className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase">그날 출근한 모든 동료(팀 전체)</p>
-                      <button type="button" onClick={(e) => { e.stopPropagation(); setEditState(p => ({...p, peersList: !p.peersList, addingPeer: false})); }} className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold transition-colors ${editState.peersList ? 'bg-indigo-500 text-white' : (isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600')}`}>
-                        {editState.peersList ? '완료' : <><Edit2 size={10}/> 수정</>}
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                      {currentData.peers.map((peer, idx) => (
-                        <span key={idx} className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] sm:text-[11px] font-bold ${isDark ? 'bg-slate-700 text-gray-200' : 'bg-gray-100 text-slate-700'}`}>
-                          {peer}
-                          {editState.peersList && (
-                            <button type="button" onClick={(e) => { e.stopPropagation(); setScheduleData(prev => ({ ...prev, [dateStr]: { ...(prev[dateStr] || {}), peers: (prev[dateStr]?.peers || []).filter((_, i) => i !== idx), isManual: true } })); }} className="ml-1 p-0.5 rounded-full hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors">
-                              <X size={10} className="text-gray-400 hover:text-rose-500"/>
-                            </button>
-                          )}
-                        </span>
-                      ))}
-                      {editState.peersList && !editState.addingPeer && (
-                        <button type="button" onClick={(e) => { e.stopPropagation(); setEditState(p => ({...p, addingPeer: true})); }} className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] sm:text-[11px] font-bold border border-dashed hover:bg-gray-50 dark:hover:bg-slate-700 ${isDark ? 'border-slate-500 text-slate-300' : 'border-gray-300 text-gray-600'}`}>
-                          <Plus size={10}/> 추가
-                        </button>
-                      )}
-                      {currentData.peers.length === 0 && !editState.peersList && <span className="text-[10px] text-gray-400 italic">추가된 동료가 없습니다.</span>}
-                    </div>
-                    {editState.addingPeer && (
-                      <div className="flex flex-col gap-2 mt-2 p-2 rounded-lg border border-dashed dark:border-slate-600">
-                        <div className="flex flex-wrap gap-1.5">
-                          {memberList.filter(m => !currentData.peers.includes(m)).map((member, idx) => (
-                            <button key={idx} type="button" onClick={(e) => { e.stopPropagation(); setScheduleData(prev => ({...prev, [dateStr]: {...(prev[dateStr] || {}), peers: [...(prev[dateStr]?.peers || []), member], isManual: true}})); }} className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-active ${isDark ? 'bg-slate-600 border-slate-500 text-white hover:bg-indigo-500/50 hover:border-indigo-500' : 'bg-white border-gray-300 text-slate-700 hover:bg-indigo-50 hover:border-indigo-300'}`}>
-                              + {member}
-                            </button>
-                          ))}
-                          {memberList.filter(m => !currentData.peers.includes(m)).length === 0 && <span className="text-[9px] text-gray-400">멤버가 없습니다. 직접 입력하세요.</span>}
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <input type="text" value={newPeerName} onChange={(e)=>setNewPeerName(e.target.value)} className={`flex-1 text-[10px] font-bold outline-none rounded p-1.5 border ${bgInput}`} placeholder="이름 입력" onKeyDown={(e) => { if (e.key === 'Enter' && newPeerName.trim()) { e.stopPropagation(); setScheduleData(prev => ({...prev, [dateStr]: {...(prev[dateStr] || {}), peers: [...(prev[dateStr]?.peers || []), newPeerName.trim()], isManual: true}})); setNewPeerName(''); } }} />
-                          <button type="button" onClick={(e) => { e.stopPropagation(); if (newPeerName.trim()) { setScheduleData(prev => ({...prev, [dateStr]: {...(prev[dateStr] || {}), peers: [...(prev[dateStr]?.peers || []), newPeerName.trim()], isManual: true}})); } setEditState(p => ({...p, addingPeer: false})); setNewPeerName(''); }} className="px-2.5 py-1.5 bg-indigo-500 text-white rounded font-bold text-[10px]">확인</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className={`flex items-start gap-2 sm:gap-3 p-2 rounded-xl transition-all ${editState.memo ? (isDark ? 'ring-2 ring-inset ring-indigo-500 bg-indigo-900/10' : 'ring-2 ring-inset ring-indigo-500 bg-indigo-50/20') : ''}`}>
-                  <div className={`p-2 rounded-xl shrink-0 ${isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-500'}`}><AlignLeft size={16} /></div>
-                  <div className="flex-1 flex flex-col">
-                    <div className="flex justify-between items-center mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <p className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase">일정 및 메모</p>
-                        {currentData.memo && !editState.memo && (
-                          <button type="button" onClick={(e) => { e.stopPropagation(); setScheduleData(prev => ({...prev, [dateStr]: {...(prev[dateStr] || {}), isMemoVisible: !currentData.isMemoVisible}})); }} className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold transition-colors ${currentData.isMemoVisible ? (isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600') : (isDark ? 'bg-slate-700 text-gray-400' : 'bg-gray-100 text-gray-400')}`}>
-                            {currentData.isMemoVisible ? <Eye size={10}/> : <EyeOff size={10}/>} {currentData.isMemoVisible ? '표시됨' : '숨김'}
-                          </button>
-                        )}
-                      </div>
-                      <button 
-                        type="button" 
-                        onClick={(e) => { 
-                          e.stopPropagation(); 
-                          if(!editState.memo) { 
-                            setTempMemo(currentData.memo || ''); 
-                            setEditState(p => ({...p, memo: true})); 
-                          } else { 
-                            setScheduleData(prev => ({ ...prev, [dateStr]: { ...(prev[dateStr] || {}), memo: tempMemo.trim(), isMemoVisible: tempMemo.trim() !== '' } })); 
-                            setEditState(p => ({...p, memo: false})); 
-                          } 
-                        }} 
-                        className={`
-                          flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold transition-colors
-                          ${editState.memo ? 'bg-indigo-500 text-white' : (currentData.memo ? (isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-100 text-indigo-600') : (isDark ? 'bg-slate-700 text-gray-300' : 'bg-gray-100 text-gray-600'))}
-                        `}
-                      >
-                        {editState.memo ? '저장' : <><Edit2 size={10}/> {currentData.memo ? '수정' : '작성'}</>}
-                      </button>
-                    </div>
-                    {editState.memo ? (
-                      <div className="flex flex-col gap-1.5 mt-1">
-                        <textarea value={tempMemo} onChange={(e)=>setTempMemo(e.target.value)} className={`w-full text-[11px] font-bold outline-none rounded-lg p-2 border ${bgInput} resize-none h-20 custom-scrollbar`} placeholder="내용 입력" autoFocus />
-                        <div className="flex justify-end">
-                          <button type="button" onClick={(e) => { e.stopPropagation(); setEditState(p => ({...p, memo: false})); }} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold ${isDark ? 'bg-slate-700 text-white' : 'bg-gray-200 text-gray-700'}`}>취소</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div onClick={(e) => { e.stopPropagation(); setTempMemo(currentData.memo || ''); setEditState(p => ({...p, memo: true})); }} className={`p-2 rounded-lg text-[11px] min-h-[40px] cursor-pointer whitespace-pre-wrap leading-relaxed ${isDark ? 'bg-slate-700/50 text-gray-200' : 'bg-gray-50 text-slate-700'}`}>
-                        {currentData.memo ? currentData.memo : <span className="text-gray-400 italic">메모가 없습니다.</span>}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      <nav className={`fixed bottom-0 w-full max-w-md border-t px-6 h-[60px] pb-6 flex justify-between items-center z-40 backdrop-blur-xl shrink-0 ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-gray-100'}`}>
-        {['calendar', 'salary', 'statistics', 'settings'].map(tab => (
-          <button 
-            type="button" 
-            key={tab} 
-            onClick={() => handleTabChange(tab)} 
-            className={`
-              flex flex-col items-center gap-1.5 transition-colors
-              ${activeTab === tab ? (isDark ? 'text-indigo-400' : 'text-indigo-500') : textMuted}
-            `}
-          >
-            {tab === 'calendar' && <CalendarIcon size={18} strokeWidth={activeTab === tab ? 2.5 : 2} />}
-            {tab === 'salary' && <Wallet size={18} strokeWidth={activeTab === tab ? 2.5 : 2} />}
-            {tab === 'statistics' && <BarChart2 size={18} strokeWidth={activeTab === tab ? 2.5 : 2} />}
-            {tab === 'settings' && <Settings size={18} strokeWidth={activeTab === tab ? 2.5 : 2} />}
-            
-            <span className="text-[10px] font-black">
-              {tab === 'calendar' ? '달력' : tab === 'salary' ? '급여' : tab === 'statistics' ? '통계' : '설정'}
-            </span>
+      <nav className={`fixed bottom-0 w-full max-w-md border-t px-6 h-[60px] flex justify-between items-center z-40 backdrop-blur-xl ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-gray-100'}`}>
+        {['calendar', 'salary', 'statistics', 'settings'].map(t => (
+          <button key={t} onClick={() => handleTabChange(t)} className={`flex flex-col items-center gap-1 ${activeTab === t ? (isDark ? 'text-indigo-400' : 'text-indigo-500') : textMuted}`}>
+            {t === 'calendar' && <CalendarIcon size={18} />}
+            {t === 'salary' && <Wallet size={18} />}
+            {t === 'statistics' && <BarChart2 size={18} />}
+            {t === 'settings' && <Settings size={18} />}
+            <span className="text-[9px] font-black">{t==='calendar'?'달력':t==='salary'?'급여':t==='statistics'?'통계':'설정'}</span>
           </button>
         ))}
       </nav>
@@ -1394,28 +1217,13 @@ const App = () => {
           {notification}
         </div>
       )}
-      
+
       <style>{`
-        body {
-  overflow: hidden !important;
-  overscroll-behavior-y: none;
-  position: fixed;
-  width: 100%;
-  height: 100%;
-}
-@keyframes slideInLeft { from { transform: translateX(-15px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-@keyframes slideInRight { from { transform: translateX(15px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes slideInUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        @keyframes slideOutDown { from { transform: translateY(0); } to { transform: translateY(100%); } }
-        @keyframes fadeInSoft { from { opacity: 0; transform: scale(0.99); } to { opacity: 1; transform: scale(1); } }
-        .slide-in-left { animation: slideInLeft 0.25s ease-out forwards; }
-        .slide-in-right { animation: slideInRight 0.25s ease-out forwards; }
-        .slide-in-up { animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .slide-out-down { animation: slideOutDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .fade-in-soft { animation: fadeInSoft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .transition-active:active { transform: scale(0.96); }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        body { overflow: hidden !important; position: fixed; width: 100%; height: 100%; }
+        .fade-in-soft { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .custom-scrollbar::-webkit-scrollbar { width: 2px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
       `}</style>
     </div>
   );
