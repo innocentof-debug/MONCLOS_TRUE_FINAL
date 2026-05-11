@@ -140,23 +140,26 @@ const NumberInput = ({ value, onChange, onEnter, width = "w-20", align = "text-r
 };
 
 const InteractiveMiniChart = ({ rawData, metricKey, isDark, metricName, timeRange }) => {
-  // 데이터가 없으면 "데이터가 없다"고 알려주는 안전장치
-  if (!rawData || rawData.length === 0 || (rawData.length === 1 && rawData[0].workDays === 0)) {
+  // [수정 포인트] 데이터가 없으면 '05월' 같은 글자도 안 나오게 아예 일찍 끝내버립니다.
+  const hasData = rawData && rawData.length > 0 && rawData.some(d => d[metricKey] > 0);
+
+  if (!hasData) {
     return (
-      <div className="flex-1 flex items-center justify-center text-[10px] text-gray-400 italic">
-        표시할 추이 데이터가 없습니다.
+      <div className="flex-1 flex flex-col items-center justify-center text-[10px] text-gray-400 italic">
+        <Activity size={20} className="mb-2 opacity-10" />
+        데이터를 입력하면 추이가 표시됩니다.
       </div>
     );
   }
-  const [hoverIndex, setHoverIndex] = useState(null);
-  const chartRef = useRef(null);
+
+  // 데이터가 있을 때만 아래 그림을 그립니다.
   const data = useMemo(() => {
     let sliced = rawData;
     if (timeRange === '6m') sliced = rawData.slice(0, 6);
     else if (timeRange === '1y') sliced = rawData.slice(0, 12);
     return [...sliced].reverse();
   }, [rawData, timeRange]);
-  const gradientId = useMemo(() => `areaGradient-${Math.random().toString(36).slice(2)}`, []);
+
   const padding = { top: 20, right: 15, bottom: 20, left: 15 };
   const width = 400; const height = 110; 
   const innerWidth = width - padding.left - padding.right;
@@ -165,52 +168,22 @@ const InteractiveMiniChart = ({ rawData, metricKey, isDark, metricName, timeRang
   let maxVal = Math.max(...values, 1);
   let minVal = Math.min(...values);
   if (maxVal === minVal) minVal = Math.max(0, minVal - 1);
-  else { const yPadding = (maxVal - minVal) * 0.2; maxVal += yPadding; minVal = Math.max(0, minVal - yPadding); }
-  const valRange = maxVal === minVal ? 1 : maxVal - minVal;
-  const getX = (index) => padding.left + (index / (Math.max(data.length - 1, 1))) * innerWidth;
-  const getY = (val) => padding.top + innerHeight - ((val - minVal) / valRange) * innerHeight;
+  const valRange = maxVal - minVal || 1;
+
+  const getX = (i) => padding.left + (i / (Math.max(data.length - 1, 1))) * innerWidth;
+  const getY = (v) => padding.top + innerHeight - ((v - minVal) / valRange) * innerHeight;
   const linePath = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(d[metricKey] || 0)}`).join(' ');
-  const areaPath = `${linePath} L ${getX(data.length - 1)} ${height - padding.bottom} L ${padding.left} ${height - padding.bottom} Z`;
-  const shouldShowLabel = (index) => {
-    if (data.length <= 6) return true;
-    if (data.length <= 12) return index % 2 === 0 || index === data.length -1;
-    return index % 3 === 0 || index === data.length -1;
-  };
-  const formatLabel = (d, key) => {
-    if (key === 'incentive' || key === 'salaryE') return `${((d[key]||0)/10000).toFixed(0)}만`;
-    if (key.includes('shift')) return `${d[key]||0}회`;
-    return `${d[key]||0}일`;
-  };
   const strokeColor = isDark ? '#22d3ee' : '#4f46e5'; 
-  const handlePointerMove = (e) => {
-    if (!chartRef.current || data.length === 0) return;
-    const rect = chartRef.current.getBoundingClientRect();
-    const x = e.clientX || (e.touches && e.touches[0].clientX);
-    if (!x) return;
-    const offsetX = x - rect.left - padding.left;
-    let idx = Math.round((offsetX / innerWidth) * (data.length - 1));
-    idx = Math.max(0, Math.min(data.length - 1, idx));
-    setHoverIndex(idx);
-  };
-  if(data.length === 0) return <div className="flex-1 flex items-center justify-center text-xs text-gray-400">데이터가 없습니다.</div>;
+
   return (
-    <div className="relative w-full h-full flex flex-col touch-none select-none" ref={chartRef} onMouseMove={handlePointerMove} onTouchMove={handlePointerMove} onMouseLeave={() => setHoverIndex(null)} onTouchEnd={() => setHoverIndex(null)}>
+    <div className="relative w-full h-full flex flex-col touch-none select-none overflow-hidden">
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible flex-1">
-        <defs><linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={strokeColor} stopOpacity="0.3" /><stop offset="100%" stopColor={strokeColor} stopOpacity="0" /></linearGradient></defs>
-        {data.map((d, i) => (shouldShowLabel(i) && (
-          <text key={i} x={getX(i)} y={height - 2} textAnchor="middle" className={`text-[8px] font-bold ${isDark ? 'fill-slate-500' : 'fill-gray-400'}`}>{d.month.split('.')[1]}월</text>
-        )))}
-        <path d={areaPath} fill={`url(#${gradientId})`} /><path d={linePath} fill="none" stroke={strokeColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        {hoverIndex !== null && data[hoverIndex] && (
-          <g>
-            <line x1={getX(hoverIndex)} y1={padding.top} x2={getX(hoverIndex)} y2={height - padding.bottom} stroke={isDark ? '#64748b' : '#cbd5e1'} strokeWidth="1" strokeDasharray="3 3" />
-            <circle cx={getX(hoverIndex)} cy={getY(data[hoverIndex][metricKey] || 0)} r="4" fill={isDark ? '#1e293b' : '#ffffff'} stroke={strokeColor} strokeWidth="2" />
-            <g transform={`translate(${getX(hoverIndex) < width / 2 ? getX(hoverIndex) + 10 : getX(hoverIndex) - 55}, ${getY(data[hoverIndex][metricKey] || 0) - 18})`}>
-              <rect width="50" height="20" rx="4" fill={isDark ? '#1e293b' : '#ffffff'} stroke={isDark ? '#334155' : '#e2e8f0'} className="shadow-lg"/>
-              <text x="25" y="13" textAnchor="middle" className={`text-[9px] font-black ${isDark ? 'fill-white' : 'fill-slate-900'}`}>{formatLabel(data[hoverIndex], metricKey)}</text>
-            </g>
-          </g>
-        )}
+        {data.map((d, i) => (
+          <text key={i} x={getX(i)} y={height - 2} textAnchor="middle" className={`text-[8px] font-black ${isDark ? 'fill-slate-500' : 'fill-gray-400'}`}>
+            {d.month ? d.month.split('.')[1] + '월' : ''}
+          </text>
+        ))}
+        <path d={linePath} fill="none" stroke={strokeColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </div>
   );
@@ -1033,76 +1006,44 @@ const App = () => {
         )}
 
         {activeTab === 'salary' && (
-          <div className="p-2 flex-1 max-h-[calc(100vh-140px)] flex flex-col fade-in-soft space-y-2 overflow-hidden">
-            <div className="flex bg-gray-100 dark:bg-slate-700 rounded-lg p-1 shrink-0">
-              <button type="button" onClick={() => setSalaryMenu('current')} className={`flex-1 text-[10px] py-1.5 rounded-md font-bold transition-colors ${salaryMenu === 'current' ? (isDark ? 'bg-slate-800 shadow text-indigo-400' : 'bg-white shadow text-indigo-500') : textMuted}`}>이번 달 급여</button>
-              <button type="button" onClick={() => setSalaryMenu('past')} className={`flex-1 text-[10px] py-1.5 rounded-md font-bold transition-colors ${salaryMenu === 'past' ? (isDark ? 'bg-slate-800 shadow text-indigo-400' : 'bg-white shadow text-indigo-500') : textMuted}`}>과거 내역 조회</button>
-              <button type="button" onClick={() => setSalaryMenu('stat')} className={`flex-1 text-[10px] py-1.5 rounded-md font-bold transition-colors ${salaryMenu === 'stat' ? (isDark ? 'bg-slate-800 shadow text-indigo-400' : 'bg-white shadow text-indigo-500') : textMuted}`}>급여 통계</button>
+          <div className={`p-3 flex-1 max-h-[calc(100vh-150px)] flex flex-col fade-in-soft overflow-y-auto custom-scrollbar border-2 ${borderCard} rounded-2xl ${bgCard} shadow-sm`}>
+            {/* 상단 요약 영역 */}
+            <div className="mb-4 shrink-0">
+              <p className="text-[10px] text-gray-400 font-black uppercase">실 수령액 (E = A - D)</p>
+              <h2 className="text-2xl font-black">₩{currentSalary.E.toLocaleString()}</h2>
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-[10px] font-bold text-indigo-500">현재 모드: {salaryMode}</span>
+                <span className="text-[10px] text-gray-400 font-bold text-right">시급: ₩{globalHourlyRate.toLocaleString()}</span>
+              </div>
             </div>
-            
-            {salaryMenu === 'current' && (
-              <div className="flex-1 min-h-0 flex flex-col space-y-1.5">
-                <div className={`flex justify-between items-center ${bgCard} border ${borderCard} rounded-xl p-2 shrink-0`}>
-                  <div className="flex items-center gap-2 pl-2">
-                    <span className={`font-black text-[11px] sm:text-xs ${isDark ? 'text-indigo-400' : 'text-indigo-500'}`}>
-                      {currentDate.getFullYear()}.{String(currentDate.getMonth() + 1).padStart(2, '0')}
-                    </span>
-                  </div>
-                  <button type="button" onClick={() => setSalaryMode(m => m === '회사기준' ? '소득기준' : '회사기준')} className={`px-2 py-1.5 text-[9px] font-bold rounded-md flex items-center gap-1 active:scale-95 transition-transform ${isDark ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-50 text-indigo-600'}`}>
-                    현재: {salaryMode} <RefreshCw size={10}/>
-                  </button>
-                </div>
-                {renderSalaryCard(currentSalaryDetails, false)}
-              </div>
-            )}
 
-            {salaryMenu === 'past' && (
-              <div className="flex-1 min-h-0 flex flex-col space-y-1.5">
-                <div className={`flex justify-between items-center ${bgCard} border ${borderCard} rounded-xl p-2 shrink-0`}>
-                  <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => { setSalaryPastIndex(Math.min(salaryPastIndex + 1, (pastDataState || []).length - 1)); setEditState(p => ({...p, pastBaseSalary: false, pastHourlyRate: false})); }} className={`p-1.5 ${salaryPastIndex === (pastDataState || []).length - 1 ? 'opacity-30' : ''}`}>
-                      <ChevronLeft size={14}/>
-                    </button>
-                    <span className="font-black text-[11px] sm:text-xs">{pastDataState[salaryPastIndex]?.month || '데이터 없음'}</span>
-                    <button type="button" onClick={() => { setSalaryPastIndex(Math.max(salaryPastIndex - 1, 0)); setEditState(p => ({...p, pastBaseSalary: false, pastHourlyRate: false})); }} className={`p-1.5 ${salaryPastIndex === 0 ? 'opacity-30' : ''}`}>
-                      <ChevronRight size={14}/>
-                    </button>
-                  </div>
-                  <button type="button" onClick={() => setPastDataState(prev => { const n = [...prev]; if (n[salaryPastIndex]) n[salaryPastIndex].mode = n[salaryPastIndex].mode === '회사기준' ? '소득기준' : '회사기준'; return n; })} className={`px-2 py-1.5 text-[9px] font-bold rounded-md flex items-center gap-1 active:scale-95 transition-transform ${isDark ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-50 text-indigo-600'}`}>
-                    현재: {pastDataState[salaryPastIndex]?.mode || '소득기준'} <RefreshCw size={10}/>
-                  </button>
-                </div>
-                {(() => { 
-                  const p = pastDataState[salaryPastIndex]; 
-                  if(!p) return <div className="text-center p-10 text-gray-400">조회할 내역이 없습니다.</div>; 
-                  const rate = p.hourlyRate || globalHourlyRate; 
-                  const c = calculateSalaryDetails(p.workDays, p.leaveDays, p.sundayCount, p.extraPay, p.incentive, p.customTax, p.absenceWeeks, p.mode, p.companyBaseSalary, rate); 
-                  return renderSalaryCard(c, true, p.month); 
-                })()}
+            {/* 상세 내역 리스트 (좌우 스크롤 없게 간결하게 배치) */}
+            <div className="space-y-3 pt-3 border-t border-dashed border-gray-200 dark:border-slate-700">
+              <div className="flex justify-between text-[11px] font-medium">
+                <span className={textMuted}>기본급 ({currentSalary.workDays}일)</span>
+                <span className="font-bold">₩{currentSalary.basePay.toLocaleString()}</span>
               </div>
-            )}
-
-            {salaryMenu === 'stat' && (
-              <div className="flex-1 min-h-0 flex flex-col space-y-2 fade-in-soft">
-                <div className={`${bgCard} border ${borderCard} rounded-xl p-3 flex-1 min-h-0 flex flex-col shadow-sm relative overflow-hidden`}>
-                  <div className="flex justify-between items-center mb-2 shrink-0 z-10">
-                    <h3 className="text-[11px] font-black flex items-center gap-1.5">
-                      <Wallet size={12} className="text-indigo-500"/>
-                      <span className={isDark ? 'text-white' : 'text-slate-900'}>실수령액 변동 추이</span>
-                    </h3>
-                    <TimeRangeSelector range={salaryChartRange} setRange={setSalaryChartRange} isDark={isDark} />
-                  </div>
-                  <div className="flex justify-end mb-1 shrink-0 z-10">
-                    <button type="button" onClick={() => setSalaryChartMode(m => m === '회사기준' ? '소득기준' : '회사기준')} className={`px-2 py-1 text-[8px] font-bold rounded flex items-center gap-1 ${isDark ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-50 text-indigo-600'}`}>
-                      기준: {salaryChartMode} <RefreshCw size={8}/>
-                    </button>
-                  </div>
-                  <div className="flex-1 min-h-0 relative -mx-2">
-                    <InteractiveMiniChart rawData={fullChartDataArray} metricKey={'salaryE'} metricName={'실수령액'} timeRange={salaryChartRange} isDark={isDark} />
-                  </div>
-                </div>
+              <div className="flex justify-between text-[11px] font-medium">
+                <span className={textMuted}>주휴수당 ({currentSalary.paidHolidayWeeks}주)</span>
+                <span className="font-bold">₩{currentSalary.weeklyHolidayPay.toLocaleString()}</span>
               </div>
-            )}
+              <div className="flex justify-between text-[11px] font-medium">
+                <span className={textMuted}>추가근무 수당</span>
+                <span className="font-bold text-indigo-500">₩{currentSalary.extraPay.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-[11px] font-medium">
+                <span className={textMuted}>식대 및 연차수당</span>
+                <span className="font-bold">₩{(currentSalary.mealAllowance + currentSalary.leavePay).toLocaleString()}</span>
+              </div>
+              
+              <div className={`pt-3 border-t-2 border-dashed ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+                <div className="flex justify-between text-[11px] font-black text-rose-500">
+                  <span>D. 총 공제액</span>
+                  <span>- ₩{currentSalary.D.toLocaleString()}</span>
+                </div>
+                <p className="text-[8px] text-gray-400 mt-1 text-right">* 국민연금, 건강보험, 고용보험, 소득세 등 포함</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1151,49 +1092,54 @@ const App = () => {
         })()}
 
         {activeTab === 'settings' && (
-          <div className="p-2 flex-1 max-h-[calc(100vh-140px)] flex flex-col fade-in-soft space-y-1.5 overflow-hidden">
-            {/* 1행: 프로필 & API보안 */}
-            <div className="grid grid-cols-2 gap-1.5 shrink-0">
-              <div className={`p-2 border ${borderCard} rounded-xl ${bgCard}`}>
-                <p className="text-[8px] font-black text-indigo-500 uppercase mb-1">Profile</p>
-                <div className="flex justify-between text-[10px] font-bold"><span>{userInfo.name}</span><span className="text-gray-400 text-[8px]">{userInfo.position}</span></div>
-              </div>
-              <div className={`p-2 border ${borderCard} rounded-xl ${bgCard}`}>
-                <p className="text-[8px] font-black text-amber-500 uppercase mb-1">API Security</p>
-                <div className="flex justify-between items-center h-3"><span className="text-[9px] font-mono text-gray-400">{apiKey ? 'CONNECTED' : 'EMPTY'}</span><Lock size={10} className="text-gray-400"/></div>
+          <div className={`p-4 flex-1 max-h-[calc(100vh-150px)] flex flex-col fade-in-soft space-y-4 overflow-y-auto custom-scrollbar border-2 ${borderCard} rounded-2xl ${bgCard} shadow-sm`}>
+            {/* 프로필 설정 */}
+            <div className="space-y-1">
+              <h3 className="text-[10px] font-black text-gray-400 uppercase">Profile</h3>
+              <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
+                <span className="text-[11px] font-bold">{userInfo.name} ({userInfo.position})</span>
+                <Settings size={14} className="text-gray-400" />
               </div>
             </div>
-            {/* 2행: 시작요일 & 화면테마 */}
-            <div className="grid grid-cols-2 gap-1.5 shrink-0">
-              <div onClick={()=>setStartDay(startDay===1?0:1)} className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex justify-between items-center h-10`}>
-                <span className="text-[9px] font-bold">월요일 시작</span>{startDay===1?<ToggleRight size={16} className="text-indigo-500"/>:<ToggleLeft size={16}/>}
-              </div>
-              <div onClick={()=>setTheme(isDark?'light':'dark')} className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex justify-between items-center h-10`}>
-                <span className="text-[9px] font-bold">다크 모드</span>{isDark?<ToggleRight size={16} className="text-indigo-400"/>:<ToggleLeft size={16}/>}
-              </div>
-            </div>
-            {/* 3행: 조별시간 & 근무표스캔 */}
-            <div className="grid grid-cols-2 gap-1.5 shrink-0">
-              <div className={`p-2 border ${borderCard} rounded-xl ${bgCard}`}>
-                <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Shift Time</p>
-                <div className="flex justify-between text-[9px] font-bold"><span>A: {shiftSettings.A.start}</span><span>C: {shiftSettings.C.start}</span></div>
-              </div>
-              <div className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex flex-col justify-center h-10`}>
-                <button className="w-full py-1 bg-indigo-500 text-white rounded-md text-[9px] font-black active:scale-95">이미지 스캔</button>
+
+            {/* API 보안 */}
+            <div className="space-y-1">
+              <h3 className="text-[10px] font-black text-gray-400 uppercase">API Security</h3>
+              <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
+                <span className="text-[11px] font-mono text-gray-400">{apiKey ? 'CONNECTED' : 'EMPTY'}</span>
+                <Lock size={14} className="text-gray-400" />
               </div>
             </div>
-            {/* 4행: 데이터 백업 & 화이트리스트 */}
-            <div className="grid grid-cols-2 gap-1.5 flex-1 min-h-0">
-              <div className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex flex-col justify-center gap-1`}>
-                <p className="text-[8px] font-black text-emerald-500 uppercase">Data</p>
-                <button onClick={exportData} className="text-[9px] font-bold text-gray-500 flex items-center gap-1"><Download size={10}/> 내보내기</button>
-                <button className="text-[9px] font-bold text-indigo-500 flex items-center gap-1"><UploadCloud size={10}/> 불러오기</button>
+
+            {/* 화면 설정 */}
+            <div className="grid grid-cols-1 gap-2">
+              <div onClick={()=>setStartDay(startDay===1?0:1)} className="flex justify-between items-center p-2 bg-gray-50 dark:bg-slate-700/50 rounded-xl cursor-pointer">
+                <span className="text-[11px] font-bold">월요일부터 시작</span>
+                {startDay === 1 ? <ToggleRight className="text-indigo-500" /> : <ToggleLeft />}
               </div>
-              <div className={`p-2 border ${borderCard} rounded-xl ${bgCard} flex flex-col overflow-hidden`}>
-                <p className="text-[8px] font-black text-gray-400 uppercase mb-1">Whitelist</p>
-                <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-wrap gap-1 content-start">
-                  {memberList.map(m=><span key={m} className="px-1.5 py-0.5 bg-gray-100 dark:bg-slate-700 rounded text-[8px] font-bold">{m}</span>)}
-                </div>
+              <div onClick={()=>setTheme(isDark?'light':'dark')} className="flex justify-between items-center p-2 bg-gray-50 dark:bg-slate-700/50 rounded-xl cursor-pointer">
+                <span className="text-[11px] font-bold">다크 모드 사용</span>
+                {isDark ? <ToggleRight className="text-indigo-400" /> : <ToggleLeft />}
+              </div>
+            </div>
+
+            {/* 데이터 관리 */}
+            <div className="flex gap-2">
+              <button onClick={exportData} className="flex-1 py-2 bg-gray-100 dark:bg-slate-700 rounded-xl text-[10px] font-bold flex items-center justify-center gap-2">
+                <Download size={14} /> 내보내기
+              </button>
+              <button className="flex-1 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 rounded-xl text-[10px] font-bold flex items-center justify-center gap-2">
+                <UploadCloud size={14} /> 불러오기
+              </button>
+            </div>
+
+            {/* 화이트리스트 (맨 아래 배치) */}
+            <div className="space-y-1">
+              <h3 className="text-[10px] font-black text-gray-400 uppercase">Whitelist</h3>
+              <div className="flex flex-wrap gap-1 p-2 border border-dashed border-gray-200 dark:border-slate-700 rounded-xl">
+                {memberList.map(m => (
+                  <span key={m} className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded-md text-[9px] font-bold">{m}</span>
+                ))}
               </div>
             </div>
           </div>
