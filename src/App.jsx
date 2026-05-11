@@ -733,36 +733,35 @@ const App = () => {
     const rateToDisplay = !isPastMode ? currentHourlyRate : (pastDataState[salaryPastIndex]?.hourlyRate || globalHourlyRate);
     return (
       <div className={`
-        ${bgCard} p-3 rounded-xl sm:rounded-2xl shadow-sm border 
-        ${borderCard} flex-1 min-h-0 overflow-y-auto 
-        custom-scrollbar flex flex-col
+        ${bgCard} p-2 rounded-xl shadow-sm border 
+        ${borderCard} flex-1 min-h-0 flex flex-col overflow-hidden
       `}>
-        <div className="flex justify-between items-start mb-2 shrink-0">
+        <div className="flex justify-between items-start mb-1.5 shrink-0">
           <div className="flex-1">
-            <p className="text-[10px] text-gray-400 font-bold mb-0.5 uppercase">
+            <p className="text-[9px] text-gray-400 font-bold mb-0.5 uppercase">
               {isPastMode ? `${pastMonthStr} 실 수령액` : '실 수령액 (E = A - D)'}
             </p>
-            <h2 className={`text-2xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <h2 className={`text-xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>
               ₩{calcData.E.toLocaleString()}
             </h2>
           </div>
           <div className="text-right">
-            <p className="text-[9px] text-gray-400 font-bold uppercase">적용 시급</p>
+            <p className="text-[8px] text-gray-400 font-bold uppercase">적용 시급</p>
             {isHourlyEdit ? (
-              <div className="flex items-center gap-1 h-[24px] mt-0.5">
+              <div className="flex items-center gap-1 h-[22px] mt-0.5">
                 <NumberInput 
                   value={!isPastMode ? tempHourlyRate : tempPastHourlyRate} 
                   onChange={!isPastMode ? setTempHourlyRate : setTempPastHourlyRate} 
                   onEnter={() => handleSaveHourlyRate(null, isPastMode)} 
-                  width="w-20" 
+                  width="w-16" 
                 />
                 <button type="button" onClick={(e) => handleSaveHourlyRate(e, isPastMode)} className="h-full px-1.5 bg-indigo-500 text-white rounded shadow-sm">
                   <Check size={12}/>
                 </button>
               </div>
             ) : (
-              <div className={`flex items-center justify-end gap-1 px-1 py-0.5 rounded transition-all duration-500 ${flashingField === (isPastMode ? 'pastHourlyRate' : 'hourlyRate') ? 'bg-indigo-500/20 ring-1 ring-indigo-500/50' : ''}`}>
-                <span className={`text-sm font-black ${isDark ? 'text-indigo-400' : 'text-indigo-500'}`}>
+              <div className={`flex items-center justify-end gap-1 px-1 rounded transition-all duration-500 ${flashingField === (isPastMode ? 'pastHourlyRate' : 'hourlyRate') ? 'bg-indigo-500/20 ring-1 ring-indigo-500/50' : ''}`}>
+                <span className={`text-xs font-black ${isDark ? 'text-indigo-400' : 'text-indigo-500'}`}>
                   ₩{rateToDisplay.toLocaleString()}
                 </span>
                 <button 
@@ -785,7 +784,7 @@ const App = () => {
             )}
           </div>
         </div>
-        <div className={`space-y-1.5 pt-2 border-t border-dashed ${isDark ? 'border-slate-600' : 'border-gray-100'}`}>
+        <div className={`space-y-1.5 pt-1.5 border-t border-dashed ${isDark ? 'border-slate-600' : 'border-gray-100'} flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1`}>
           <p className={`text-[10px] font-bold ${isDark ? 'text-indigo-300' : 'text-indigo-500'} mb-0.5`}>A. 세전 지급액 : ₩{calcData.A.toLocaleString()}</p>
           <div className="flex justify-between text-[11px]">
             <span className={textMuted}>기본급 ({calcData.workDays}일 × 8h)</span>
@@ -1027,7 +1026,7 @@ const App = () => {
         )}
 
         {activeTab === 'salary' && (
-          <div className="p-2 sm:p-3 flex-1 min-h-0 flex flex-col fade-in-soft space-y-2">
+          <div className="p-1.5 flex-1 min-h-0 flex flex-col fade-in-soft space-y-1.5">
             <div className="flex bg-gray-100 dark:bg-slate-700 rounded-lg p-1 shrink-0">
               <button type="button" onClick={() => setSalaryMenu('current')} className={`flex-1 text-[10px] py-1.5 rounded-md font-bold transition-colors ${salaryMenu === 'current' ? (isDark ? 'bg-slate-800 shadow text-indigo-400' : 'bg-white shadow text-indigo-500') : textMuted}`}>이번 달 급여</button>
               <button type="button" onClick={() => setSalaryMenu('past')} className={`flex-1 text-[10px] py-1.5 rounded-md font-bold transition-colors ${salaryMenu === 'past' ? (isDark ? 'bg-slate-800 shadow text-indigo-400' : 'bg-white shadow text-indigo-500') : textMuted}`}>과거 내역 조회</button>
@@ -1103,22 +1102,27 @@ const App = () => {
         {activeTab === 'statistics' && (() => {
           const pastStat = pastDataState[statPastIndex] || {};
           return (
-            <div className="p-2 sm:p-3 flex-1 min-h-0 flex flex-col fade-in-soft space-y-1.5">
-              <div className={`${bgCard} p-2.5 sm:p-3 rounded-2xl shadow-sm border ${borderCard} shrink-0`}>
+            <div className="p-1.5 flex-1 min-h-0 flex flex-col fade-in-soft space-y-1">
+              {/* 상단: 이번 달 현황 */}
+              <div className={`${bgCard} p-2 rounded-xl shadow-sm border ${borderCard} shrink-0`}>
                 <h3 className="text-[10px] font-black mb-1.5 flex items-center text-gray-400 uppercase">
                   <Activity size={10} className="mr-1.5 text-indigo-500" /> 이번 달 현황
                 </h3>
                 <StatGrid stats={{ workDays: currentMonthStats.workDays, offDays: currentMonthStats.offDays, leaveDays: currentMonthStats.leaveDays, incentive: currentSalaryDetails.validIncentive, shiftA: currentMonthStats.shiftA, shiftB: currentMonthStats.shiftB, shiftC: currentMonthStats.shiftC }} isDark={isDark} />
               </div>
-              <div className={`shrink-0 flex flex-col ${bgCard} border ${borderCard} rounded-2xl p-2.5 sm:p-3 shadow-sm`}>
-                <div className={`flex justify-between items-center mb-1.5 rounded-xl p-1 ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
+              
+              {/* 중단: 과거 기록 비교 */}
+              <div className={`shrink-0 flex flex-col ${bgCard} border ${borderCard} rounded-xl p-2 shadow-sm`}>
+                <div className={`flex justify-between items-center mb-1.5 rounded-lg p-1 ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
                   <button type="button" onClick={() => setStatPastIndex(Math.min(statPastIndex + 1, (pastDataState || []).length - 1))} className={`p-1 ${statPastIndex === (pastDataState || []).length - 1 ? 'opacity-30' : ''}`}><ChevronLeft size={12} /></button>
-                  <span className={`font-black text-[10px] sm:text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>{pastStat.month || '과거'} 기록</span>
+                  <span className={`font-black text-[10px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{pastStat.month || '과거'} 기록</span>
                   <button type="button" onClick={() => setStatPastIndex(Math.max(statPastIndex - 1, 0))} className={`p-1 ${statPastIndex === 0 ? 'opacity-30' : ''}`}><ChevronRight size={12}/></button>
                 </div>
                 <StatGrid stats={{ workDays: pastStat.workDays || 0, offDays: pastStat.offDays || 0, leaveDays: pastStat.leaveDays || 0, incentive: pastStat.incentive || 0, shiftA: pastStat.shiftA || 0, shiftB: pastStat.shiftB || 0, shiftC: pastStat.shiftC || 0 }} isDark={isDark} />
               </div>
-              <div className={`${bgCard} border ${borderCard} rounded-2xl p-3 flex-1 min-h-0 flex flex-col shadow-sm relative overflow-hidden`}>
+
+              {/* 하단: 전체 추이 차트 (남은 공간을 모두 차지하도록 flex-1 적용) */}
+              <div className={`${bgCard} border ${borderCard} rounded-xl p-2 flex-1 min-h-0 flex flex-col shadow-sm relative overflow-hidden`}>
                 <div className="flex justify-between items-center mb-1 shrink-0 z-10">
                   <h3 className="text-[10px] font-black flex items-center gap-1.5">
                     <Activity size={10} className="text-indigo-500"/>
@@ -1564,23 +1568,23 @@ const App = () => {
         );
       })()}
 
-      <nav className={`fixed bottom-0 w-full max-w-md border-t px-6 py-2 sm:py-3 flex justify-between items-center z-40 backdrop-blur-xl shrink-0 ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-gray-100'}`}>
+      <nav className={`fixed bottom-0 w-full max-w-md border-t px-6 h-[85px] pb-6 flex justify-between items-center z-40 backdrop-blur-xl shrink-0 ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-gray-100'}`}>
         {['calendar', 'salary', 'statistics', 'settings'].map(tab => (
           <button 
             type="button" 
             key={tab} 
             onClick={() => handleTabChange(tab)} 
             className={`
-              flex flex-col items-center gap-0.5 transition-colors
+              flex flex-col items-center gap-1.5 transition-colors
               ${activeTab === tab ? (isDark ? 'text-indigo-400' : 'text-indigo-500') : textMuted}
             `}
           >
-            {tab === 'calendar' && <CalendarIcon size={16} strokeWidth={activeTab === tab ? 2.5 : 2} />}
-            {tab === 'salary' && <Wallet size={16} strokeWidth={activeTab === tab ? 2.5 : 2} />}
-            {tab === 'statistics' && <BarChart2 size={16} strokeWidth={activeTab === tab ? 2.5 : 2} />}
-            {tab === 'settings' && <Settings size={16} strokeWidth={activeTab === tab ? 2.5 : 2} />}
+            {tab === 'calendar' && <CalendarIcon size={22} strokeWidth={activeTab === tab ? 2.5 : 2} />}
+            {tab === 'salary' && <Wallet size={22} strokeWidth={activeTab === tab ? 2.5 : 2} />}
+            {tab === 'statistics' && <BarChart2 size={22} strokeWidth={activeTab === tab ? 2.5 : 2} />}
+            {tab === 'settings' && <Settings size={22} strokeWidth={activeTab === tab ? 2.5 : 2} />}
             
-            <span className="text-[8px] sm:text-[9px] font-bold">
+            <span className="text-[10px] font-black">
               {tab === 'calendar' ? '달력' : tab === 'salary' ? '급여' : tab === 'statistics' ? '통계' : '설정'}
             </span>
           </button>
@@ -1594,8 +1598,15 @@ const App = () => {
       )}
       
       <style>{`
-        @keyframes slideInLeft { from { transform: translateX(-15px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes slideInRight { from { transform: translateX(15px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        body {
+  overflow: hidden !important;
+  overscroll-behavior-y: none;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+@keyframes slideInLeft { from { transform: translateX(-15px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideInRight { from { transform: translateX(15px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes slideInUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes slideOutDown { from { transform: translateY(0); } to { transform: translateY(100%); } }
         @keyframes fadeInSoft { from { opacity: 0; transform: scale(0.99); } to { opacity: 1; transform: scale(1); } }
