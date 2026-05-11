@@ -257,6 +257,9 @@ const App = () => {
 
   // 개인 API Key 및 보안 설정
   const [apiKey, setApiKey] = useStickyState('', 'monclos_apiKey');
+  // --- 3번 수정: API 보안 스위치 추가 ---
+  const [isApiKeyEditing, setIsApiKeyEditing] = useState(false);
+  const [tempApiKey, setTempApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
 
   const [userInfo, setUserInfo] = useStickyState({ name: '장루몽', position: 'PT' }, 'monclos_userInfo');
@@ -866,39 +869,60 @@ const App = () => {
 
   return (
     <div className={`flex flex-col h-screen overflow-hidden ${bgMain} ${textMain} font-sans max-w-md mx-auto shadow-2xl border-x ${borderCard} transition-colors duration-300`}>
-      <header className={`${bgCard} px-4 pt-8 pb-3 sm:pt-10 flex justify-between items-end border-b ${borderCard} z-10 shrink-0`}>
-        <div>
-          <h1 className="text-lg sm:text-xl font-bold tracking-tight">MONCLOS</h1>
-          <p className={`text-[9px] sm:text-[10px] ${textMuted} font-medium`}>{userInfo.name}의 스케줄러</p>
-        </div>
-        {activeTab === 'calendar' && (
-          <div className={`flex items-center space-x-1 ${isDark ? 'bg-slate-700' : 'bg-gray-50'} p-1 rounded-full px-2`}>
-            <button type="button" onClick={() => changeMonth(-1)}>
-              <ChevronLeft size={14} className={`${textMuted} active:scale-75 transition-transform`} />
-            </button>
-            <span className="text-[10px] sm:text-xs font-bold w-14 sm:w-16 text-center">
-              {currentDate.getFullYear()}.{String(currentDate.getMonth() + 1).padStart(2, '0')}
-            </span>
-            <button type="button" onClick={() => changeMonth(1)}>
-              <ChevronRight size={14} className={`${textMuted} active:scale-75 transition-transform`} />
-            </button>
-          </div>
-        )}
-      </header>
+      <header className={`${bgCard} px-4 pt-4 pb-2 flex justify-between items-center border-b ${borderCard} z-10 shrink-0`}>
+  {/* pt-8 -> pt-4로 줄여 윗 공간 확보, items-end -> items-center로 정렬 변경 */}
+  <div>
+    <h1 className="text-base font-black tracking-tighter leading-none">MONCLOS</h1>
+    <p className={`text-[9px] ${textMuted} font-bold`}>{userInfo.name}의 스케줄러</p>
+  </div>
+
+  {activeTab === 'calendar' && (
+    <div className={`flex items-center space-x-1 ${isDark ? 'bg-slate-700' : 'bg-gray-100'} rounded-full p-0.5`}>
+      {/* 버튼에 p-2를 주어 터치 영역을 크게 만들고, 아이콘 사이즈를 18로 키움 */}
+      <button 
+        type="button" 
+        onClick={() => changeMonth(-1)} 
+        className="p-2 active:scale-75 transition-transform"
+      >
+        <ChevronLeft size={18} className={`${textMuted}`} />
+      </button>
+      
+      <span className="text-[11px] font-black w-16 text-center">
+        {currentDate.getFullYear()}.{String(currentDate.getMonth() + 1).padStart(2, '0')}
+      </span>
+      
+      <button 
+        type="button" 
+        onClick={() => changeMonth(1)} 
+        className="p-2 active:scale-75 transition-transform"
+      >
+        <ChevronRight size={18} className={`${textMuted}`} />
+      </button>
+    </div>
+  )}
+</header>
 
       <main className="flex-1 flex flex-col min-h-0 relative pb-[60px]">
         {activeTab === 'calendar' && (
-          <div className="p-2 sm:p-3 flex-1 min-h-0 flex flex-col fade-in-soft" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEndAction}>
-            <div className="grid grid-cols-7 mb-1 shrink-0">
+          /* p-2 -> p-1로 줄여서 전체 공간 확보, overflow-hidden으로 스크롤 방지 */
+          <div className="p-1 flex-1 min-h-0 flex flex-col fade-in-soft overflow-hidden" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEndAction}>
+            
+            {/* 1. 요일 헤더: py-1 -> py-0.5로 축소 */}
+            <div className="grid grid-cols-7 mb-0.5 shrink-0">
               {weekDaysHeader.map((d, i) => { 
                 let cClass = textMuted; 
                 if ((startDay === 1 && i === 6) || (startDay === 0 && i === 0)) cClass = 'text-rose-500'; 
                 if ((startDay === 1 && i === 5) || (startDay === 0 && i === 6)) cClass = 'text-blue-500'; 
-                return <div key={d} className={`text-center text-[9px] font-bold py-1 ${cClass}`}>{d}</div>; 
+                return <div key={d} className={`text-center text-[9px] font-black py-0.5 ${cClass}`}>{d}</div>; 
               })}
             </div>
+
+            {/* 2. 달력 본체 그리드 */}
             <div className={`flex-1 min-h-0 relative overflow-hidden rounded-xl border ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
-              <div key={currentDate.toISOString()} className={`absolute inset-0 grid grid-cols-7 gap-px ${isDark ? 'bg-slate-700' : 'bg-gray-200'} ${slideDirection === 'left' ? 'slide-in-left' : slideDirection === 'right' ? 'slide-in-right' : ''}`} style={{ gridTemplateRows: `repeat(${calendarDays.length / 7}, minmax(0, 1fr))` }}>
+              <div key={currentDate.toISOString()} 
+                   className={`absolute inset-0 grid grid-cols-7 gap-px ${isDark ? 'bg-slate-700' : 'bg-gray-200'} ${slideDirection === 'left' ? 'slide-in-left' : slideDirection === 'right' ? 'slide-in-right' : ''}`} 
+                   style={{ gridTemplateRows: `repeat(${calendarDays.length / 7}, minmax(0, 1fr))` }}>
+                
                 {calendarDays.map((dayObj, idx) => {
                   const { date, isCurrentMonth } = dayObj; 
                   const dateStr = formatDate(date); 
@@ -909,6 +933,7 @@ const App = () => {
                   const holidayName = HOLIDAY_DATA[dateStr]; 
                   const isRedDay = date.getDay() === 0 || holidayName; 
                   let boxStyle = ''; let textColor = textMain;
+                  
                   if (isToday) { 
                     if (isRedDay) boxStyle = 'bg-rose-400 text-white'; 
                     else if (date.getDay() === 6) boxStyle = 'bg-blue-400 text-white'; 
@@ -917,6 +942,7 @@ const App = () => {
                     if (isRedDay) textColor = 'text-rose-500'; 
                     else if (date.getDay() === 6) textColor = 'text-blue-500'; 
                   }
+
                   return (
                     <div 
                       key={idx} 
@@ -924,33 +950,40 @@ const App = () => {
                       className={`
                         h-full w-full flex flex-col items-center relative transition-all cursor-pointer active:opacity-70 overflow-hidden
                         ${isDark ? 'bg-slate-800' : 'bg-white'} 
-                        ${!isCurrentMonth ? (isDark ? 'bg-slate-800/40 opacity-50' : 'bg-gray-50/50 opacity-60') : ''} 
-                        ${isSelected ? `ring-[1.5px] ring-inset z-10 rounded-lg ${isDark ? 'ring-slate-500' : 'ring-gray-300'}` : ''}
+                        ${!isCurrentMonth ? 'opacity-30' : ''} 
+                        ${isSelected ? `ring-[1.5px] ring-inset z-10 rounded-lg ${isDark ? 'ring-indigo-500' : 'ring-indigo-400'}` : ''}
                       `}
                     >
-                      <div className="relative flex justify-center items-center w-full mt-0.5 mb-0.5 h-[18px]">
+                      {/* 3. 날짜 숫자 영역: h-[18px] -> h-[15px]로 축소, 오늘 표시 원 크기도 축소 */}
+                      <div className="relative flex justify-center items-center w-full h-[15px] mt-0.5">
                         <div className="relative flex justify-center items-center h-full">
-                          {shiftData?.memo && <div className="absolute right-full mr-1 w-1 h-1 rounded-full bg-indigo-500" />}
+                          {shiftData?.memo && <div className="absolute right-full mr-0.5 w-1 h-1 rounded-full bg-indigo-500" />}
                           <span className={`
-                            text-[10px] font-bold flex items-center justify-center 
-                            ${isToday ? `w-[18px] h-[18px] rounded-md ${boxStyle}` : textColor}
+                            text-[9px] font-black flex items-center justify-center 
+                            ${isToday ? `w-[15px] h-[15px] rounded-md ${boxStyle}` : textColor}
                           `}>
                             {date.getDate()}
                           </span>
-                          {holidayName && <div className="absolute left-full ml-1 w-1 h-1 rounded-full bg-rose-400" />}
+                          {holidayName && <div className="absolute left-full ml-0.5 w-1 h-1 rounded-full bg-rose-400" />}
                         </div>
                       </div>
+
+                      {/* 4. 근무 라벨: py-0.5 -> py-0으로 여백 제거 */}
                       {shiftData && shiftData.shift !== 'OFF' && shiftData.shift !== '/' && (
-                        <div className={`w-[95%] py-0.5 rounded border text-center text-[8px] font-bold shadow-sm truncate leading-tight ${isDark ? (INITIAL_SHIFT_SETTINGS[shiftData.shift]?.darkColor || 'bg-slate-700 text-gray-300 border-slate-600') : (INITIAL_SHIFT_SETTINGS[shiftData.shift]?.color || 'bg-gray-100 text-gray-700 border-gray-200')}`}>
+                        <div className={`w-[92%] py-0 rounded-[2px] border text-center text-[7px] font-black truncate leading-tight mt-0.5 ${isDark ? (INITIAL_SHIFT_SETTINGS[shiftData.shift]?.darkColor || 'bg-slate-700 text-gray-300 border-slate-600') : (INITIAL_SHIFT_SETTINGS[shiftData.shift]?.color || 'bg-gray-100 text-gray-700 border-gray-200')}`}>
                           {INITIAL_SHIFT_SETTINGS[shiftData.shift]?.label || shiftData.shift}
                         </div>
                       )}
+
+                      {/* 5. 메모: py-[3px] -> py-0으로 여백 제거 */}
                       {shiftData?.memo && shiftData?.isMemoVisible && (
-                        <div className={`w-[95%] mt-0.5 mb-0.5 py-[3px] px-1 rounded shadow-sm border text-center text-[7px] font-medium truncate leading-tight ${isDark ? 'bg-indigo-900/40 text-indigo-200 border-indigo-500/30' : 'bg-indigo-50 text-indigo-600 border-indigo-200'}`}>
+                        <div className={`w-[92%] mt-0.5 py-0 px-0.5 rounded border text-center text-[7px] font-bold truncate leading-none ${isDark ? 'bg-indigo-900/40 text-indigo-200 border-indigo-500/30' : 'bg-indigo-50 text-indigo-600 border-indigo-200'}`}>
                           {shiftData.memo}
                         </div>
                       )}
-                      {dailyInc && <div className="absolute bottom-1 w-full text-center text-[8px] font-black text-amber-500 truncate leading-none">+{dailyInc}</div>}
+
+                      {/* 6. 인센티브: bottom-1 -> bottom-0.5로 이동 */}
+                      {dailyInc && <div className="absolute bottom-0.5 w-full text-center text-[7px] font-black text-amber-500 truncate leading-none">+{dailyInc}</div>}
                     </div>
                   );
                 })}
@@ -1102,27 +1135,55 @@ const App = () => {
               </div>
             </div>
 
-            {/* API 보안 설정 */}
+           {/* API 보안 설정: 잠금 및 수정 모드 적용 버전 */}
             <div className={`p-3 rounded-xl shadow-sm border ${bgCard} ${borderCard} shrink-0`}>
               <div className="flex justify-between items-center mb-2">
-                <h3 className="text-[11px] font-bold flex items-center gap-1.5"><Lock size={14} className="text-amber-500" /> API 보안 설정</h3>
-                <div className="flex items-center gap-1.5">
-                  <span className={`text-[8px] font-bold ${apiKey ? 'text-emerald-500' : 'text-rose-500'}`}>{apiKey ? '연결됨' : '키 필요'}</span>
-                  <button type="button" onClick={() => setShowApiKey(!showApiKey)} className={`p-1 rounded-md ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
-                    {showApiKey ? <EyeOff size={12}/> : <Eye size={12}/>}
-                  </button>
+                <h3 className="text-[11px] font-bold flex items-center gap-1.5">
+                  <Lock size={14} className="text-amber-500" /> API 보안 설정
+                </h3>
+                {/* 30자 이상일 때만 '연결됨' 표시 */}
+                <div className={`px-2 py-0.5 rounded-full text-[8px] font-bold ${apiKey.length > 30 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
+                  {apiKey.length > 30 ? '연결됨' : '키 입력 필요'}
                 </div>
               </div>
-              <div className={`p-2 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-gray-50'} border ${isDark ? 'border-slate-600' : 'border-gray-100'}`}>
-                <input 
-                  type={showApiKey ? "text" : "password"} 
-                  value={apiKey} 
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Gemini API Key를 입력하세요"
-                  className="w-full bg-transparent text-[11px] font-mono font-bold outline-none border-none text-slate-500 focus:text-indigo-500"
-                />
+
+              <div className="flex gap-2">
+                <div className={`flex-1 p-2 rounded-lg border ${isDark ? 'bg-slate-700/50 border-slate-600' : 'bg-gray-50 border-gray-100'}`}>
+                  {isApiKeyEditing ? (
+                    <input 
+                      autoFocus
+                      type="text"
+                      value={tempApiKey}
+                      onChange={(e) => setTempApiKey(e.target.value)}
+                      placeholder="Key를 붙여넣으세요"
+                      className="w-full bg-transparent text-[11px] font-mono font-bold outline-none text-indigo-500"
+                    />
+                  ) : (
+                    <div className="text-[11px] font-mono font-bold text-slate-400 truncate">
+                      {apiKey ? '•'.repeat(25) : '등록된 키 없음'}
+                    </div>
+                  )}
+                </div>
+
+                {isApiKeyEditing ? (
+                  <button 
+                    type="button"
+                    onClick={() => { setApiKey(tempApiKey); setIsApiKeyEditing(false); }}
+                    className="px-3 bg-indigo-600 text-white rounded-lg font-bold text-[10px] active:scale-95 transition-transform"
+                  >
+                    저장
+                  </button>
+                ) : (
+                  <button 
+                    type="button"
+                    onClick={() => { setTempApiKey(apiKey); setIsApiKeyEditing(true); }}
+                    className={`px-3 rounded-lg font-bold text-[10px] active:scale-95 transition-transform ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600'}`}
+                  >
+                    수정
+                  </button>
+                )}
               </div>
-              <p className="mt-2 text-[8px] text-gray-400 leading-tight">* 입력된 키는 귀하의 브라우저(localStorage)에만 안전하게 저장되며, OCR 스캔 시에만 구글 서버로 직접 전송됩니다.</p>
+              {/* 하단 설명글 삭제됨 (디자인 균형을 위해) */}
             </div>
 
             <div className="grid grid-cols-2 gap-2 shrink-0">
