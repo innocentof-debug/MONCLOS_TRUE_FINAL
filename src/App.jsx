@@ -1173,16 +1173,16 @@ const App = () => {
             <div className={`p-3 rounded-xl shadow-sm border ${bgCard} ${borderCard} shrink-0`}>
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-[11px] font-bold flex items-center gap-1.5">
-                  <Lock size={14} className="text-amber-500" /> API 보안 설정
+                  {/* 잠금/해제 아이콘 연동 */}
+                  {showApiKey ? <Unlock size={14} className="text-amber-500" /> : <Lock size={14} className="text-amber-500" />} API 보안 설정
                 </h3>
-                {/* 30자 이상일 때만 '연결됨' 표시 */}
                 <div className={`px-2 py-0.5 rounded-full text-[8px] font-bold ${apiKey.length > 30 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
                   {apiKey.length > 30 ? '연결됨' : '키 입력 필요'}
                 </div>
               </div>
 
               <div className="flex gap-2">
-                <div className={`flex-1 p-2 rounded-lg border ${isDark ? 'bg-slate-700/50 border-slate-600' : 'bg-gray-50 border-gray-100'}`}>
+                <div className={`flex-1 p-2 rounded-lg border ${isDark ? 'bg-slate-700/50 border-slate-600' : 'bg-gray-50 border-gray-100'} flex items-center`}>
                   {isApiKeyEditing ? (
                     <input 
                       autoFocus
@@ -1193,8 +1193,21 @@ const App = () => {
                       className="w-full bg-transparent text-[11px] font-mono font-bold outline-none text-indigo-500"
                     />
                   ) : (
-                    <div className="text-[11px] font-mono font-bold text-slate-400 truncate">
-                      {apiKey ? '•'.repeat(25) : '등록된 키 없음'}
+                    <div className="flex-1 flex justify-between items-center w-full">
+                      <div className="text-[11px] font-mono font-bold text-slate-400 truncate flex-1">
+                        {/* 눈 모양 아이콘 상태에 따라 실제 키 값 표시 */}
+                        {apiKey ? (showApiKey ? apiKey : '•'.repeat(25)) : '등록된 키 없음'}
+                      </div>
+                      {/* 보기/숨기기 토글 버튼 */}
+                      {apiKey && (
+                        <button 
+                          type="button" 
+                          onClick={() => setShowApiKey(!showApiKey)} 
+                          className="ml-2 p-1 rounded-md text-gray-400 hover:text-indigo-500 transition-colors"
+                        >
+                          {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1217,9 +1230,7 @@ const App = () => {
                   </button>
                 )}
               </div>
-              {/* 하단 설명글 삭제됨 (디자인 균형을 위해) */}
             </div>
-
             <div className="grid grid-cols-2 gap-2 shrink-0">
               <div onClick={() => setStartDay(startDay === 0 ? 1 : 0)} className={`flex flex-col gap-1.5 p-2.5 rounded-xl shadow-sm border ${bgCard} ${borderCard} cursor-pointer active:scale-95 transition-transform`}>
                 <span className="text-[9px] font-bold text-gray-400">달력 시작 요일</span>
