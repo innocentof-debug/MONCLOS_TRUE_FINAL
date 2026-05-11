@@ -1373,7 +1373,7 @@ const App = () => {
               <AlertTriangle size={24} />
             </div>
             <h3 className={`text-center text-lg font-black mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>이미 업로드됨</h3>
-            <p className={`text-center text-[11px] ${textMuted} mb-6 leading-relaxed`}>해당 년월의 데이터가 이미 존재합니다.<br/><span className="text-rose-500 font-bold underline">기존 수동 입력 및 스케줄이 삭제</span>되고<br/>새 이미지로 업데이트됩니다. 진행할까요?</p>
+            <p className={`text-center text-[11px] ${textMuted} mb-6 leading-relaxed`}>해당 년월의 데이터가 이미 존재합니다.<br/><span className="text-indigo-500 font-bold underline">과거 기록 및 직접 수정한 일정은 보존</span>되며,<br/>오늘 이후의 스케줄만 업데이트됩니다. 진행할까요?</p>
             <div className="flex flex-col gap-2">
               <button type="button" onClick={() => { setIsOverwriteModalOpen(false); if (fileInputRef.current) fileInputRef.current.click(); }} className="w-full py-3 rounded-xl font-bold text-[11px] bg-indigo-500 text-white shadow-lg active:scale-95 transition-transform">
                 네, 새로 업로드합니다
@@ -1486,15 +1486,15 @@ const App = () => {
                       <div className="flex flex-col gap-2 mt-2 p-2 rounded-lg border border-dashed dark:border-slate-600">
                         <div className="flex flex-wrap gap-1.5">
                           {memberList.filter(m => !currentData.peers.includes(m)).map((member, idx) => (
-                            <button key={idx} type="button" onClick={(e) => { e.stopPropagation(); setScheduleData(prev => ({...prev, [dateStr]: {...(prev[dateStr] || {}), peers: [...(prev[dateStr]?.peers || []), member]}})); }} className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-active ${isDark ? 'bg-slate-600 border-slate-500 text-white hover:bg-indigo-500/50 hover:border-indigo-500' : 'bg-white border-gray-300 text-slate-700 hover:bg-indigo-50 hover:border-indigo-300'}`}>
+                            <button key={idx} type="button" onClick={(e) => { e.stopPropagation(); setScheduleData(prev => ({...prev, [dateStr]: {...(prev[dateStr] || {}), peers: [...(prev[dateStr]?.peers || []), member], isManual: true}})); }} className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-active ${isDark ? 'bg-slate-600 border-slate-500 text-white hover:bg-indigo-500/50 hover:border-indigo-500' : 'bg-white border-gray-300 text-slate-700 hover:bg-indigo-50 hover:border-indigo-300'}`}>
                               + {member}
                             </button>
                           ))}
                           {memberList.filter(m => !currentData.peers.includes(m)).length === 0 && <span className="text-[9px] text-gray-400">멤버가 없습니다. 직접 입력하세요.</span>}
                         </div>
                         <div className="flex items-center gap-1.5 mt-1">
-                          <input type="text" value={newPeerName} onChange={(e)=>setNewPeerName(e.target.value)} className={`flex-1 text-[10px] font-bold outline-none rounded p-1.5 border ${bgInput}`} placeholder="이름 입력" onKeyDown={(e) => { if (e.key === 'Enter' && newPeerName.trim()) { e.stopPropagation(); setScheduleData(prev => ({...prev, [dateStr]: {...(prev[dateStr] || {}), peers: [...(prev[dateStr]?.peers || []), newPeerName.trim()]}})); setNewPeerName(''); } }} />
-                          <button type="button" onClick={(e) => { e.stopPropagation(); if (newPeerName.trim()) { setScheduleData(prev => ({...prev, [dateStr]: {...(prev[dateStr] || {}), peers: [...(prev[dateStr]?.peers || []), newPeerName.trim()]}})); } setEditState(p => ({...p, addingPeer: false})); setNewPeerName(''); }} className="px-2.5 py-1.5 bg-indigo-500 text-white rounded font-bold text-[10px]">확인</button>
+                          <input type="text" value={newPeerName} onChange={(e)=>setNewPeerName(e.target.value)} className={`flex-1 text-[10px] font-bold outline-none rounded p-1.5 border ${bgInput}`} placeholder="이름 입력" onKeyDown={(e) => { if (e.key === 'Enter' && newPeerName.trim()) { e.stopPropagation(); setScheduleData(prev => ({...prev, [dateStr]: {...(prev[dateStr] || {}), peers: [...(prev[dateStr]?.peers || []), newPeerName.trim()], isManual: true}})); setNewPeerName(''); } }} />
+                          <button type="button" onClick={(e) => { e.stopPropagation(); if (newPeerName.trim()) { setScheduleData(prev => ({...prev, [dateStr]: {...(prev[dateStr] || {}), peers: [...(prev[dateStr]?.peers || []), newPeerName.trim()], isManual: true}})); } setEditState(p => ({...p, addingPeer: false})); setNewPeerName(''); }} className="px-2.5 py-1.5 bg-indigo-500 text-white rounded font-bold text-[10px]">확인</button>
                         </div>
                       </div>
                     )}
