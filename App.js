@@ -22,7 +22,11 @@ function useStickyState(defaultValue, key) {
     }
   });
   useEffect(() => {
-    window.localStorage.setItem(key, JSON.stringify(value));
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      console.warn("localStorage is not available.");
+    }
   }, [key, value]);
   return [value, setValue];
 }
@@ -394,7 +398,7 @@ const App = () => {
       throw new Error("Missing API Key");
     }
 
-    const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
+    const MODEL_NAME = "gemini-2.5-flash";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
     
     const prompt = `당신은 몽클로스 매장 전용 근무표 분석가입니다. 이미지에서 표 구조를 완벽히 파악하여 팀 전체 일정을 추출하세요.
